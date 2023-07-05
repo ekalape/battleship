@@ -1,18 +1,24 @@
 import playerDatabase from '../database/PlayerDatabase';
-import { regResponse } from '../utils/types';
+import { RegResponseType, WebSocketClient } from '../utils/types';
+import WebSocket from 'ws';
 
-export function regHandler(data: string) {
-    let response: regResponse;
+
+export function regHandler(data: string, ws: WebSocket) {
+    let response: RegResponseType;
+
 
     try {
         const parsedData = JSON.parse(data);
         console.log("data >> ", data)
         const index = playerDatabase.getNextNumber()
-        playerDatabase.set(parsedData.name, index)
+
+
+        playerDatabase.set(parsedData.name, index, ws)
         response = { name: parsedData.name, index, error: false, errorText: "" }
 
     } catch (err) {
         response = { name: "Unknown", index: -1, error: true, errorText: "Parsing error" }
     }
-    return JSON.stringify(response)
+
+    return response
 }

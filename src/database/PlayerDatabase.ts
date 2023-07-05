@@ -1,22 +1,29 @@
-import { Player } from '../utils/types';
-
+import { IPlayer } from '../utils/types';
+import WebSocket from 'ws';
 
 
 class PlayerDatabase {
-    private database: Player[]
+    private database: IPlayer[]
     constructor() {
         this.database = []
     }
     get() { return this.database }
-    set(playerName: string, index: number) {
-        const player: Player = {
+    set(playerName: string, index: number, ws: WebSocket) {
+        const player: IPlayer = {
             name: playerName,
             index: index,
-            insideRoom: false,
+            ws,
             room: null,
-            currentGame: null
+            currentGame: null,
+
         }
         this.database.push(player)
+    }
+
+    getSinglePlayer(index: number) {
+        const player = this.database.find(p => p.index === index);
+        if (!player) throw new Error("No user found")
+        return player;
     }
 
     delete(index: number) {
