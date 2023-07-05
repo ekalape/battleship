@@ -2,7 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
 import { WebSocketServer } from 'ws';
-//import { wsRequestHandler } from '../websocket/handler';
+import { regHandler } from '../wsHandlers/regHandler';
+import { IMessage } from '../utils/types';
 
 export const httpServer = http.createServer(function (req, res) {
   const __dirname = path.resolve(path.dirname(''));
@@ -22,17 +23,34 @@ export const httpServer = http.createServer(function (req, res) {
 const wss = new WebSocketServer({ server: httpServer });
 
 wss.on('connection', function connection(ws) {
-  //let response;
+  const response: IMessage = { type: null, data: "", id: 0 };
+
   ws.on('error', console.error);
 
-  ws.on('open', () => {
-    console.log('open');
+  ws.on('close', () => {
+    console.log('closing ws');
   });
 
   ws.on('message', function message(data) {
-    //response = wsRequestHandler(data);
-    //ws.send(response);
+    let resData: string;
+    try {
+      const parsedData = JSON.parse(data.toString());
+      switch (parsedData.type) {
+        case "reg":
+          response.type = "reg";
+          resData = regHandler(parsedData.data);
+          response.data = resData;
+          break;
+        default: {
+          console.log("default case")
+        }
+      }
+
+      ws.send(JSON.stringify(response))
+
+    } catch (err) {
+      console.log("Parsing error")
+    }
   });
 
-  ws.send('something');
 });
