@@ -1,9 +1,9 @@
 import playerDatabase from '../database/PlayerDatabase';
-import { RegResponseType } from '../utils/types';
+import { RegResponseType, WebSocketClient } from '../utils/types';
 import WebSocket from 'ws';
 
 
-export function regHandler(index: number, data: string, ws: WebSocket) {
+export function regHandler(index: number, data: string, ws: WebSocketClient) {
     let response: RegResponseType;
 
 

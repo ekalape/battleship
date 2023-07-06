@@ -1,4 +1,4 @@
-import { IPlayer } from '../utils/types';
+import { IPlayer, WebSocketClient } from '../utils/types';
 import WebSocket from 'ws';
 
 
@@ -8,7 +8,7 @@ class PlayerDatabase {
         this.database = []
     }
     get() { return this.database }
-    set(playerName: string, index: number, ws: WebSocket) {
+    set(playerName: string, index: number, ws: WebSocketClient) {
         const player: IPlayer = {
             name: playerName,
             index: index,
@@ -17,6 +17,8 @@ class PlayerDatabase {
             currentGame: null,
             placedShips: false,
             ships: [],
+            matrix: [],
+            turn: false,
             wins: 0,
 
         }

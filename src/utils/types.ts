@@ -16,9 +16,11 @@ export interface IPlayer {
     room: number | null,
     currentGame: number | null,
     placedShips: boolean,
-    ships: IShip[]
+    ships: IShip[],
+    matrix: string[][],
+    turn: boolean,
     wins: number,
-    ws: WebSocket
+    ws: WebSocketClient
 
 }
 

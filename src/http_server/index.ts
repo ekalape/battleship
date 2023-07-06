@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as http from 'http';
 import WebSocket, { WebSocketServer } from 'ws';
 import { regHandler } from '../wsHandlers/regHandler';
-import { IMessage, RegResponseType } from '../utils/types';
+import { IMessage, RegResponseType, WebSocketClient } from '../utils/types';
 import { updateRoomStatus } from '../wsHandlers/roomStatusHandler';
 import roomDatabase from '../database/RoomDatabase';
 import playerDatabase from '../database/PlayerDatabase';
@@ -11,7 +11,11 @@ import { countID } from '../utils/countID';
 import { createGame } from '../wsHandlers/createGame';
 import { addPlayerToRoom } from '../wsHandlers/addPlayerToRoom';
 import { startGame } from '../wsHandlers/startGame';
-import { changeTurnHandler } from '../wsHandlers/changeTurnHandler';
+import { changeTurnHandler, turnCounter } from '../wsHandlers/changeTurnHandler';
+import { shipsToMatrix } from '../utils/shipsToMatrix';
+import { attackHandler } from '../wsHandlers/attackHandler'
+
+
 
 
 export const httpServer = http.createServer(function (req, res) {
@@ -33,8 +37,10 @@ const wss = new WebSocketServer({ server: httpServer });
 let gameID = countID();
 let roomCount = countID();
 let playerCount = countID();
+const turnCount = turnCounter()
 
-wss.on('connection', function connection(ws: WebSocket) {
+wss.on('connection', function connection(ws: WebSocketClient) {
+  console.log(`WebSocket is connected on port ${process.env.PORT || 3000}`)
 
   const response: IMessage = { type: null, data: "", id: 0 };
   let playerData: RegResponseType | null = null;
@@ -66,7 +72,9 @@ wss.on('connection', function connection(ws: WebSocket) {
         case "reg":
           {
             response.type = "reg";
-            playerData = regHandler(playerCount(), parsedData.data, ws);
+            const socketIndex = playerCount()
+            ws.id = socketIndex
+            playerData = regHandler(socketIndex, parsedData.data, ws);
             response.data = JSON.stringify(playerData);
             ws.send(JSON.stringify(response));
             const roomId = roomCount()
@@ -120,18 +128,35 @@ wss.on('connection', function connection(ws: WebSocket) {
           const gamedata = JSON.parse(parsedData.data)
           const player = playerDatabase.getSinglePlayer(gamedata.indexPlayer);
           player.ships = gamedata.ships;
-          console.log(`player found: ${player.index} with ships: ${player.ships.length}`)
+          player.matrix = shipsToMatrix(player.ships);
+
           player.placedShips = true;
           console.log(`player ${player.index} placed -->  ${player.placedShips}`)
           const gameId: number = gamedata.gameId;
           const players = playerDatabase.get().filter(pl => pl.currentGame === gameId)
           console.log("players >>> ", players[0].index, players[1].index)
           if (players.length !== 2) throw new Error("Game error")
+          const turn = turnCount()
           if (players.every(pl => pl.placedShips)) {
             players[0].ws.send(startGame(players[1]));
             players[1].ws.send(startGame(players[0]));
-            players.forEach(pl => pl.ws.send(changeTurnHandler(players[0].index)))
+            players.forEach(pl => pl.ws.send(changeTurnHandler(gameId, turn)))
           }
+          break;
+        }
+
+        case "attack": {
+          const attackData = JSON.parse(parsedData.data);
+          const { x, y, gameId, indexPlayer } = attackData;
+          const players = playerDatabase.get().filter(pl => pl.currentGame === gameId);
+          const response = attackHandler({ x, y }, gameId, indexPlayer)
+          console.log(`response attack >>> `, response)
+          const turn = turnCount()
+          players.forEach(pl => {
+            pl.ws.send(response);
+            pl.ws.send(changeTurnHandler(gameId, turn));
+          })
+          break;
         }
         default: {
           console.log("default case type", parsedData.type);
@@ -150,3 +175,5 @@ wss.on('connection', function connection(ws: WebSocket) {
   });
 
 });
+
+
