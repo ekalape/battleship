@@ -15,6 +15,9 @@ class PlayerDatabase {
             ws,
             room: null,
             currentGame: null,
+            placedShips: false,
+            ships: [],
+            wins: 0,
 
         }
         this.database.push(player)

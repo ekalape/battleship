@@ -10,6 +10,8 @@ import playerDatabase from '../database/PlayerDatabase';
 import { countID } from '../utils/countID';
 import { createGame } from '../wsHandlers/createGame';
 import { addPlayerToRoom } from '../wsHandlers/addPlayerToRoom';
+import { startGame } from '../wsHandlers/startGame';
+import { changeTurnHandler } from '../wsHandlers/changeTurnHandler';
 
 
 export const httpServer = http.createServer(function (req, res) {
@@ -111,10 +113,30 @@ wss.on('connection', function connection(ws: WebSocket) {
             }
           }
           break;
+
+        case "add_ships": {
+          console.log("type add_ships", parsedData.type)
+          //console.log(parsedData.data)
+          const gamedata = JSON.parse(parsedData.data)
+          const player = playerDatabase.getSinglePlayer(gamedata.indexPlayer);
+          player.ships = gamedata.ships;
+          console.log(`player found: ${player.index} with ships: ${player.ships.length}`)
+          player.placedShips = true;
+          console.log(`player ${player.index} placed -->  ${player.placedShips}`)
+          const gameId: number = gamedata.gameId;
+          const players = playerDatabase.get().filter(pl => pl.currentGame === gameId)
+          console.log("players >>> ", players[0].index, players[1].index)
+          if (players.length !== 2) throw new Error("Game error")
+          if (players.every(pl => pl.placedShips)) {
+            players[0].ws.send(startGame(players[1]));
+            players[1].ws.send(startGame(players[0]));
+            players.forEach(pl => pl.ws.send(changeTurnHandler(players[0].index)))
+          }
+        }
         default: {
-          console.log("default case");
-          console.log("type", parsedData.type);
-          console.log(parsedData.data);
+          console.log("default case type", parsedData.type);
+
+          // console.log(parsedData.data);
         }
       }
 

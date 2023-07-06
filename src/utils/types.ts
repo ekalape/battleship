@@ -15,6 +15,9 @@ export interface IPlayer {
     index: number,
     room: number | null,
     currentGame: number | null,
+    placedShips: boolean,
+    ships: IShip[]
+    wins: number,
     ws: WebSocket
 
 }
