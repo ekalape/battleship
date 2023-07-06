@@ -2,11 +2,17 @@ import playerDatabase from '../database/PlayerDatabase'
 import roomDatabase from '../database/RoomDatabase'
 import { IPlayer } from '../utils/types'
 
-export const startGame = (gameId: number, opponent: IPlayer) => {
+export const createGame = (gameId: number, opponent: IPlayer) => {
     playerDatabase.getSinglePlayer(opponent.index).currentGame = gameId;
-    const response = JSON.stringify({
+    const gameData = JSON.stringify({
         idGame: gameId,
         idPlayer: opponent.index
     })
+    const response = JSON.stringify({
+        type: "create_game",
+        data: gameData,
+        id: 0
+    })
+
     return response;
 }

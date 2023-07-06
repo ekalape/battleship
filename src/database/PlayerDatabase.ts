@@ -27,15 +27,15 @@ class PlayerDatabase {
     }
 
     delete(index: number) {
-        let player = this.database.find(u => u.index === index)
-        if (!player) throw Error("No user found");
+        let playerIndex = this.database.findIndex(u => u.index === index)
+        if (playerIndex < 0) throw Error("No user found");
         else {
-            this.database = this.database.filter(u => u.index !== index);
-            return player
+            this.database.splice(playerIndex, 1);
+
         }
     }
-    getNextNumber() {
-        return this.database.length + 1
+    clear() {
+        this.database = []
     }
 
 }
