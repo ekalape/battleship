@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
-import WebSocket, { WebSocketServer } from 'ws';
+import { WebSocketServer } from 'ws';
 import { regHandler } from '../wsHandlers/regHandler';
 import { IMessage, RegResponseType, WebSocketClient } from '../utils/types';
 import { updateRoomStatus } from '../wsHandlers/roomStatusHandler';
@@ -11,7 +11,7 @@ import { countID } from '../utils/countID';
 import { createGame } from '../wsHandlers/createGame';
 import { addPlayerToRoom } from '../wsHandlers/addPlayerToRoom';
 import { startGame } from '../wsHandlers/startGame';
-import { changeTurnHandler, turnCounter } from '../wsHandlers/changeTurnHandler';
+import { changeTurnHandler } from '../wsHandlers/changeTurnHandler';
 import { shipsToMatrix } from '../utils/shipsToMatrix';
 import { attackHandler } from '../wsHandlers/attackHandler'
 
@@ -37,7 +37,7 @@ const wss = new WebSocketServer({ server: httpServer });
 let gameID = countID();
 let roomCount = countID();
 let playerCount = countID();
-const turnCount = turnCounter()
+
 
 wss.on('connection', function connection(ws: WebSocketClient) {
   console.log(`WebSocket is connected on port ${process.env.PORT || 3000}`)
@@ -136,25 +136,36 @@ wss.on('connection', function connection(ws: WebSocketClient) {
           const players = playerDatabase.get().filter(pl => pl.currentGame === gameId)
           console.log("players >>> ", players[0].index, players[1].index)
           if (players.length !== 2) throw new Error("Game error")
-          const turn = turnCount()
+          //  const turn = turnCount()
+          players[0].turn = true;
           if (players.every(pl => pl.placedShips)) {
-            players[0].ws.send(startGame(players[1]));
-            players[1].ws.send(startGame(players[0]));
-            players.forEach(pl => pl.ws.send(changeTurnHandler(gameId, turn)))
+            players[0].ws.send(startGame(players[0]));
+            players[1].ws.send(startGame(players[1]));
+            const turnResponse = changeTurnHandler(gameId)
+            players.forEach(pl => pl.ws.send(turnResponse))
           }
           break;
         }
 
         case "attack": {
+          console.log(`attackData ==> ${parsedData.data}`)
           const attackData = JSON.parse(parsedData.data);
           const { x, y, gameId, indexPlayer } = attackData;
+
           const players = playerDatabase.get().filter(pl => pl.currentGame === gameId);
+
+          if (players.find(pl => pl.turn === true)?.index !== indexPlayer) {
+
+            console.log(`\n now break`)
+            break
+          };
+
           const response = attackHandler({ x, y }, gameId, indexPlayer)
           console.log(`response attack >>> `, response)
-          const turn = turnCount()
+          const turnResponse = changeTurnHandler(gameId)
           players.forEach(pl => {
             pl.ws.send(response);
-            pl.ws.send(changeTurnHandler(gameId, turn));
+            pl.ws.send(turnResponse);
           })
           break;
         }

@@ -1,29 +1,20 @@
 import playerDatabase from '../database/PlayerDatabase';
 
-export const changeTurnHandler = (gameId: number, turnNum: number) => {
+export const changeTurnHandler = (gameId: number) => {
 
     const players = playerDatabase.get().filter(pl => pl.currentGame === gameId);
-    players.forEach(pl => pl.turn = false);
-    players[turnNum].turn = true;
+    players.forEach(pl => pl.turn = !pl.turn);
+    const currentTurnIndex = players.find(pl => pl.turn === true)?.index
 
-
+    console.log(`currentTurnIndex ===> ${currentTurnIndex}`)
     const data = JSON.stringify({
-        currentPlayer: players[turnNum].index
+        currentPlayer: currentTurnIndex
     })
-    console.log(`turnIndex ---> ${turnNum}`)
+
     const response = JSON.stringify({
         type: "turn",
         data,
         id: 0,
     })
     return response;
-}
-
-export const turnCounter = () => {
-    let turn = 0;
-    return () => {
-        const value = turn % 2;
-        turn++;
-        return value;
-    }
 }
