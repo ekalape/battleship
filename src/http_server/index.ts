@@ -124,55 +124,52 @@ wss.on('connection', function connection(ws: WebSocketClient) {
 
         case "add_ships": {
           console.log("type add_ships", parsedData.type)
-          //console.log(parsedData.data)
+
           const gamedata = JSON.parse(parsedData.data)
           const player = playerDatabase.getSinglePlayer(gamedata.indexPlayer);
+
           player.ships = gamedata.ships;
           player.matrix = shipsToMatrix(player.ships);
-
           player.placedShips = true;
-          console.log(`player ${player.index} placed -->  ${player.placedShips}`)
           const gameId: number = gamedata.gameId;
           const players = playerDatabase.get().filter(pl => pl.currentGame === gameId)
           console.log("players >>> ", players[0].index, players[1].index)
           if (players.length !== 2) throw new Error("Game error")
-          //  const turn = turnCount()
           players[0].turn = true;
           if (players.every(pl => pl.placedShips)) {
-            players[0].ws.send(startGame(players[0]));
-            players[1].ws.send(startGame(players[1]));
+            const pl0response = startGame(players[0]);
+            const pl1response = startGame(players[1]);
+            players[0].ws.send(pl1response);
+            players[1].ws.send(pl0response);
             const turnResponse = changeTurnHandler(gameId)
-            players.forEach(pl => pl.ws.send(turnResponse))
+            players.forEach(pl => {
+              pl.ws.send(turnResponse)
+            })
           }
           break;
         }
 
         case "attack": {
-          console.log(`attackData ==> ${parsedData.data}`)
           const attackData = JSON.parse(parsedData.data);
           const { x, y, gameId, indexPlayer } = attackData;
-
           const players = playerDatabase.get().filter(pl => pl.currentGame === gameId);
-
           if (players.find(pl => pl.turn === true)?.index !== indexPlayer) {
-
             console.log(`\n now break`)
             break
           };
 
-          const response = attackHandler({ x, y }, gameId, indexPlayer)
-          console.log(`response attack >>> `, response)
-          const turnResponse = changeTurnHandler(gameId)
+          const { response, hit } = attackHandler({ x, y }, gameId, indexPlayer)
+          let turnResponse: string;
+          if (!hit) { turnResponse = changeTurnHandler(gameId) }
           players.forEach(pl => {
             pl.ws.send(response);
-            pl.ws.send(turnResponse);
+            if (!hit) pl.ws.send(turnResponse);
           })
           break;
         }
         default: {
           console.log("default case type", parsedData.type);
 
-          // console.log(parsedData.data);
         }
       }
 

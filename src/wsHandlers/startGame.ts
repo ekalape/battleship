@@ -5,7 +5,7 @@ export const startGame = (player: IPlayer) => {
     const opponent = playerDatabase.get().filter(pl => pl.currentGame === player.currentGame && pl.index !== player.index)[0]
 
     const gameData = JSON.stringify({
-        ships: opponent.ships,
+        ships: player.ships,
         currentPlayerIndex: player.index
     })
     const response = JSON.stringify({

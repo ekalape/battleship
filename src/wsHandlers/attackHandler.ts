@@ -3,7 +3,6 @@ import { IMessage, IShipPosition } from '../utils/types';
 
 export const attackHandler = (aPos: IShipPosition, gameId: number, indexPlayer: number) => {
     const opponent = playerDatabase.get().filter(pl => pl.currentGame === gameId).find(pl => pl.index !== indexPlayer);
-    console.log(`apos -----> ${aPos.x} and ${aPos.y}`)
     let result = "";
     if (opponent) {
         console.log(`\nopponent --->${opponent?.index}\n`)
@@ -18,7 +17,7 @@ export const attackHandler = (aPos: IShipPosition, gameId: number, indexPlayer: 
         }
 
     }
-    const attackResponse = { position: aPos, currentPlayer: opponent?.index, status: result }
+    const attackResponse = { position: aPos, currentPlayer: indexPlayer, status: result }
     const data = JSON.stringify(attackResponse)
     const response = JSON.stringify({
         type: "attack",
@@ -26,7 +25,7 @@ export const attackHandler = (aPos: IShipPosition, gameId: number, indexPlayer: 
         id: 0
 
     })
-    return response;
+    return { response, hit: result === "miss" ? false : true };
 }
 
 function updateMatrix(matrix: string[][], x: number, y: number) {
@@ -50,7 +49,7 @@ function updateMatrix(matrix: string[][], x: number, y: number) {
         ) {
             const neighbor = matrix[newX][newY];
             if (neighbor === "0") {
-                continue; // Skip this direction if the neighbor is "0"
+                continue;
             }
             if (neighbor === "x" || neighbor === "1") {
                 ship.push(neighbor)
@@ -59,7 +58,7 @@ function updateMatrix(matrix: string[][], x: number, y: number) {
     }
     console.log(`neigbors >>>>>>> ${ship}`)
 
-    if (ship.every(s => s === "x")) return "kill";
+    if (ship.every(s => s === "x")) return "killed";
     else return "shot"
 
 }
