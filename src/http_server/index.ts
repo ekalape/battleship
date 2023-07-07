@@ -159,12 +159,13 @@ wss.on('connection', function connection(ws: WebSocketClient) {
             break
           };
 
-          const { response, hit } = attackHandler({ x, y }, gameId, indexPlayer)
+          const { response, hit, winner } = attackHandler({ x, y }, gameId, indexPlayer)
           let turnResponse: string;
-          if (!hit) { turnResponse = changeTurnHandler(gameId) }
+          if (hit === false && winner === null) { turnResponse = changeTurnHandler(gameId) }
           players.forEach(pl => {
             pl.ws.send(response);
-            if (!hit) pl.ws.send(turnResponse);
+            if (hit === false && winner === null) pl.ws.send(turnResponse);
+            //if (winner) displayWinnerTable()
           })
           break;
         }
