@@ -2,7 +2,7 @@ import playerDatabase from '../database/PlayerDatabase';
 
 export const changeTurnHandler = (gameId: number) => {
 
-    const players = playerDatabase.get().filter(pl => pl.currentGame === gameId);
+    const players = playerDatabase.byGame(gameId);
     players.forEach(pl => pl.turn = !pl.turn);
     const currentTurnIndex = players.find(pl => pl.turn === true)?.index
 

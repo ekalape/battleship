@@ -30,6 +30,9 @@ class PlayerDatabase {
         if (!player) throw new Error("No user found")
         return player;
     }
+    byGame(gameId: number) {
+        return this.database.filter(pl => pl.currentGame === gameId)
+    }
 
     delete(index: number) {
         let playerIndex = this.database.findIndex(u => u.index === index)

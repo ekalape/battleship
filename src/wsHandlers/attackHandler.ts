@@ -2,10 +2,11 @@ import playerDatabase from '../database/PlayerDatabase';
 import { IMessage, IShipPosition } from '../utils/types';
 
 export const attackHandler = (aPos: IShipPosition, gameId: number, indexPlayer: number) => {
-    const opponent = playerDatabase.get().filter(pl => pl.currentGame === gameId).find(pl => pl.index !== indexPlayer);
+    const opponent = playerDatabase.byGame(gameId).find(pl => pl.index !== indexPlayer);
     let result = "";
     if (opponent) {
         console.log(`\nopponent --->${opponent?.index}\n`)
+        console.log(`\nplayer --->${indexPlayer}\n`)
         const { x, y } = aPos;
 
         if (opponent.matrix[x][y] === "0") {
@@ -56,8 +57,6 @@ function updateMatrix(matrix: string[][], x: number, y: number) {
             }
         }
     }
-    console.log(`neigbors >>>>>>> ${ship}`)
-
     if (ship.every(s => s === "x")) return "killed";
     else return "shot"
 

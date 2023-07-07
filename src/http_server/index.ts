@@ -14,6 +14,7 @@ import { startGame } from '../wsHandlers/startGame';
 import { changeTurnHandler } from '../wsHandlers/changeTurnHandler';
 import { shipsToMatrix } from '../utils/shipsToMatrix';
 import { attackHandler } from '../wsHandlers/attackHandler'
+import { randomAttackHandler } from '../wsHandlers/randomAttackHandler';
 
 
 
@@ -132,7 +133,7 @@ wss.on('connection', function connection(ws: WebSocketClient) {
           player.matrix = shipsToMatrix(player.ships);
           player.placedShips = true;
           const gameId: number = gamedata.gameId;
-          const players = playerDatabase.get().filter(pl => pl.currentGame === gameId)
+          const players = playerDatabase.byGame(gameId)
           console.log("players >>> ", players[0].index, players[1].index)
           if (players.length !== 2) throw new Error("Game error")
           players[0].turn = true;
@@ -152,13 +153,27 @@ wss.on('connection', function connection(ws: WebSocketClient) {
         case "attack": {
           const attackData = JSON.parse(parsedData.data);
           const { x, y, gameId, indexPlayer } = attackData;
-          const players = playerDatabase.get().filter(pl => pl.currentGame === gameId);
+          const players = playerDatabase.byGame(gameId);
           if (players.find(pl => pl.turn === true)?.index !== indexPlayer) {
             console.log(`\n now break`)
             break
           };
 
           const { response, hit } = attackHandler({ x, y }, gameId, indexPlayer)
+          let turnResponse: string;
+          if (!hit) { turnResponse = changeTurnHandler(gameId) }
+          players.forEach(pl => {
+            pl.ws.send(response);
+            if (!hit) pl.ws.send(turnResponse);
+          })
+          break;
+        }
+
+        case "randomAttack": {
+          console.log(`random attack ==> ${parsedData.data}`)
+          const { gameId, indexPlayer } = JSON.parse(parsedData.data);
+          const players = playerDatabase.byGame(gameId);
+          const { response, hit } = randomAttackHandler(gameId, indexPlayer);
           let turnResponse: string;
           if (!hit) { turnResponse = changeTurnHandler(gameId) }
           players.forEach(pl => {
