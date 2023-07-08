@@ -3,7 +3,6 @@ import roomDatabase from '../database/RoomDatabase';
 
 
 export const addPlayerToRoom = (playerIndex: number, roomId: number) => {
-    let ready = false
     const room = roomDatabase.get().find(r => r.roomId === roomId);
     if (!room) throw new Error("Unexistent room");
     const player = playerDatabase.getSinglePlayer(playerIndex)
@@ -15,8 +14,4 @@ export const addPlayerToRoom = (playerIndex: number, roomId: number) => {
     }
     roomDatabase.addPlayer(playerIndex, roomId)
 
-    if (room.roomUsers.length === 2) {
-        ready = true
-    }
-    return ready
 };
