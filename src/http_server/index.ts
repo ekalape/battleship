@@ -4,10 +4,10 @@ import * as http from 'http';
 import { WebSocketServer } from 'ws';
 import { regHandler } from '../wsHandlers/regHandler';
 import { IMessage, RegResponseType, WebSocketClient } from '../utils/types';
-import { updateRoomStatus } from '../wsHandlers/roomStatusHandler';
+import { readinessCheck, updateRoomStatus } from '../wsHandlers/roomStatusHandler';
 import roomDatabase from '../database/RoomDatabase';
 import playerDatabase from '../database/PlayerDatabase';
-import { countID } from '../utils/countID';
+import { gameID, roomCount, playerCount } from '../utils/countID';
 import { createGame } from '../wsHandlers/createGame';
 import { addPlayerToRoom } from '../wsHandlers/addPlayerToRoom';
 import { startGame } from '../wsHandlers/startGame';
@@ -15,6 +15,9 @@ import { changeTurnHandler } from '../wsHandlers/changeTurnHandler';
 import { shipsToMatrix } from '../utils/shipsToMatrix';
 import { attackHandler } from '../wsHandlers/attackHandler'
 import { randomAttackHandler } from '../wsHandlers/randomAttackHandler';
+import { resetPlayers } from '../utils/resetPlayers';
+import { updateWinners } from '../wsHandlers/updateWinners';
+import { winCheck, winnerResponse } from '../utils/winCheck';
 
 
 
@@ -35,13 +38,11 @@ export const httpServer = http.createServer(function (req, res) {
 });
 
 const wss = new WebSocketServer({ server: httpServer });
-let gameID = countID();
-let roomCount = countID();
-let playerCount = countID();
+
 
 
 wss.on('connection', function connection(ws: WebSocketClient) {
-  console.log(`WebSocket is connected on port ${process.env.PORT || 3000}`)
+  console.log(`New WebSocket is connected on port ${process.env.PORT || 3000}`)
 
   const response: IMessage = { type: null, data: "", id: 0 };
   let playerData: RegResponseType | null = null;
@@ -51,10 +52,10 @@ wss.on('connection', function connection(ws: WebSocketClient) {
 
   ws.on('close', () => {
     try {
-
       if (playerData) {
         playerDatabase.delete(playerData.index);
         roomDatabase.removePlayer(playerData.index)
+        wss.clients.forEach(client => client.send(JSON.stringify(updateRoomStatus())))
       }
     } catch (err) {
       if (err instanceof Error)
@@ -68,7 +69,7 @@ wss.on('connection', function connection(ws: WebSocketClient) {
 
     try {
       const parsedData = JSON.parse(data.toString());
-
+      console.log(`\ntype ---> ${parsedData.type}`)
       switch (parsedData.type) {
         case "reg":
           {
@@ -78,11 +79,11 @@ wss.on('connection', function connection(ws: WebSocketClient) {
             playerData = regHandler(socketIndex, parsedData.data, ws);
             response.data = JSON.stringify(playerData);
             ws.send(JSON.stringify(response));
+            ws.send(updateWinners());
             const roomId = roomCount()
             roomDatabase.createRoom(roomId);
             roomDatabase.addPlayer(playerData.index, roomId)
-            console.log(`room ${roomId} created, player ${playerData.index} added`)
-            const freePlayers = playerDatabase.get().filter(pl => !pl.currentGame)
+            const freePlayers = playerDatabase.available()
             freePlayers.forEach(pl => pl.ws.send(JSON.stringify(updateRoomStatus())))
             break;
           }
@@ -93,39 +94,37 @@ wss.on('connection', function connection(ws: WebSocketClient) {
               const roomId = roomCount()
               roomDatabase.createRoom(roomId);
               addPlayerToRoom(playerData.index, roomId)
-              console.log(`room ${roomId} created, player ${playerData.index} added`)
-              const freePlayers = playerDatabase.get().filter(pl => !pl.currentGame)
+              const freePlayers = playerDatabase.available()
               freePlayers.forEach(pl => pl.ws.send(JSON.stringify(updateRoomStatus())))
             }
             break;
           }
 
         case "add_user_to_room":
-          console.log(parsedData.data)
           if (playerData) {
             const parsedRoomInfo = JSON.parse(parsedData.data);
             const roomId = parsedRoomInfo?.indexRoom;
-            const ready = addPlayerToRoom(playerData.index, roomId)
+            addPlayerToRoom(playerData.index, roomId)
+            const freePlayers = playerDatabase.available()
+            freePlayers.forEach(pl => pl.ws.send(JSON.stringify(updateRoomStatus())))
+            const ready = readinessCheck(roomId)
             if (ready) {
               const readyPlayers = playerDatabase.get().filter(pl => pl.room === roomId)
               const gameid = gameID()
               console.log("gameid started", gameid)
               console.log(`players:  ${readyPlayers[0].name} and ${readyPlayers[1].name} from room ${roomId}`)
-              const freePlayers = playerDatabase.get().filter(pl => !pl.currentGame)
-              freePlayers.forEach(pl => pl.ws.send(JSON.stringify(updateRoomStatus())))
-              readyPlayers[0].ws.send(createGame(gameid, readyPlayers[1]));
-              readyPlayers[1].ws.send(createGame(gameid, readyPlayers[0]));
+
+              readyPlayers[0].ws.send(createGame(gameid, readyPlayers[0]));
+              readyPlayers[1].ws.send(createGame(gameid, readyPlayers[1]));
             }
-            else {
-              const freePlayers = playerDatabase.get().filter(pl => !pl.currentGame)
-              freePlayers.forEach(pl => pl.ws.send(JSON.stringify(updateRoomStatus())))
-            }
+            /*  else {
+               const freePlayers = playerDatabase.available()
+               freePlayers.forEach(pl => pl.ws.send(JSON.stringify(updateRoomStatus())))
+             } */
           }
           break;
 
         case "add_ships": {
-          console.log("type add_ships", parsedData.type)
-
           const gamedata = JSON.parse(parsedData.data)
           const player = playerDatabase.getSinglePlayer(gamedata.indexPlayer);
 
@@ -155,23 +154,42 @@ wss.on('connection', function connection(ws: WebSocketClient) {
           const { x, y, gameId, indexPlayer } = attackData;
           const players = playerDatabase.byGame(gameId);
           if (players.find(pl => pl.turn === true)?.index !== indexPlayer) {
-            console.log(`\n now break`)
             break
           };
 
-          const { response, hit, winner } = attackHandler({ x, y }, gameId, indexPlayer)
+          const { response, hit } = attackHandler({ x, y }, gameId, indexPlayer)
           let turnResponse: string;
-          if (hit === false && winner === null) { turnResponse = changeTurnHandler(gameId) }
+          if (!hit) { turnResponse = changeTurnHandler(gameId) }
           players.forEach(pl => {
             pl.ws.send(response);
-            if (hit === false && winner === null) pl.ws.send(turnResponse);
-            //if (winner) displayWinnerTable()
+            if (!hit) pl.ws.send(turnResponse);
+
           })
+          const winner = winCheck(gameId)
+
+          if (winner) {
+            const winResponse = winnerResponse(winner)
+            players.forEach(pl => {
+              pl.ws.send(winResponse);
+              resetPlayers(pl);
+            });
+
+            playerDatabase.get().forEach(pl => {
+              pl.ws.send(updateWinners());
+              pl.ws.send(JSON.stringify(updateRoomStatus()))
+            })
+
+            const roomId = roomCount();
+            roomDatabase.createRoom(roomId);
+
+            if (playerData) {
+              addPlayerToRoom(playerData.index, roomId)
+            }
+          }
           break;
         }
 
         case "randomAttack": {
-          console.log(`random attack ==> ${parsedData.data}`)
           const { gameId, indexPlayer } = JSON.parse(parsedData.data);
           const players = playerDatabase.byGame(gameId);
           const { response, hit } = randomAttackHandler(gameId, indexPlayer);
@@ -181,10 +199,31 @@ wss.on('connection', function connection(ws: WebSocketClient) {
             pl.ws.send(response);
             if (!hit) pl.ws.send(turnResponse);
           })
+          const winner = winCheck(gameId)
+          if (winner) {
+            const winResponse = winnerResponse(winner)
+            players.forEach(pl => {
+              pl.ws.send(winResponse);
+              resetPlayers(pl);
+            });
+
+            playerDatabase.get().forEach(pl => {
+              pl.ws.send(updateWinners());
+              pl.ws.send(JSON.stringify(updateRoomStatus()))
+            })
+
+            const roomId = roomCount();
+            roomDatabase.createRoom(roomId);
+
+            if (playerData) {
+              addPlayerToRoom(playerData.index, roomId)
+            }
+          }
           break;
         }
         default: {
           console.log("default case type", parsedData.type);
+          console.log("default case data", parsedData.data);
 
         }
       }

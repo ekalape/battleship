@@ -1,5 +1,4 @@
 import playerDatabase from '../database/PlayerDatabase'
-import roomDatabase from '../database/RoomDatabase'
 import { IPlayer } from '../utils/types'
 
 export const createGame = (gameId: number, opponent: IPlayer) => {

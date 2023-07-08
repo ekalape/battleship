@@ -1,13 +1,11 @@
 import playerDatabase from '../database/PlayerDatabase';
-import { IMessage, IShipPosition } from '../utils/types';
-import { winCheck } from '../utils/winCheck';
+import { IShipPosition } from '../utils/types';
+
 
 export const attackHandler = (aPos: IShipPosition, gameId: number, indexPlayer: number) => {
     const opponent = playerDatabase.byGame(gameId).find(pl => pl.index !== indexPlayer);
     let result = "";
     if (opponent) {
-        console.log(`\nopponent --->${opponent?.index}`)
-        console.log(`player --->${indexPlayer}\n`)
         const { x, y } = aPos;
 
         if (opponent.matrix[x][y] === "0") {
@@ -20,16 +18,14 @@ export const attackHandler = (aPos: IShipPosition, gameId: number, indexPlayer: 
 
     }
     const attackResponse = { position: aPos, currentPlayer: indexPlayer, status: result }
-    const winner = winCheck(gameId)
-
-    const data = winner ? JSON.stringify({ winPlayer: winner }) : JSON.stringify(attackResponse)
+    const data = JSON.stringify(attackResponse)
     const response = JSON.stringify({
-        type: winner ? "finish" : "attack",
+        type: "attack",
         data,
         id: 0
 
     })
-    return { response, hit: result === "miss" ? false : true, winner };
+    return { response, hit: result === "miss" ? false : true };
 }
 
 function updateMatrix(matrix: string[][], x: number, y: number) {

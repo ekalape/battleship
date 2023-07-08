@@ -12,7 +12,6 @@ export const randomAttackHandler = (gameId: number, indexPlayer: number) => {
 
     const { response, hit } = attackHandler(coords, gameId, indexPlayer)
 
-
     return { response, hit }
 };
 

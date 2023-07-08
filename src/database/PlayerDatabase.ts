@@ -33,6 +33,9 @@ class PlayerDatabase {
     byGame(gameId: number) {
         return this.database.filter(pl => pl.currentGame === gameId)
     }
+    available() {
+        return this.database.filter(pl => pl.currentGame === null)
+    }
 
     delete(index: number) {
         let playerIndex = this.database.findIndex(u => u.index === index)
@@ -42,10 +45,6 @@ class PlayerDatabase {
 
         }
     }
-    clear() {
-        this.database = []
-    }
-
 }
 
 const playerDatabase = new PlayerDatabase();
