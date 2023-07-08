@@ -24,6 +24,11 @@ export interface IPlayer {
 
 }
 
+export type regRequestType = {
+    name: string,
+    password: string
+}
+
 export type RegResponseType = {
     name: string,
     index: number,

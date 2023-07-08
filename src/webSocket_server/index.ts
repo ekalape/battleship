@@ -18,6 +18,7 @@ import { winCheck, winnerResponse } from '../utils/winCheck';
 import { httpServer } from '../http_server';
 
 
+
 const wss = new WebSocketServer({ server: httpServer });
 
 wss.on('connection', function connection(ws: WebSocketClient) {
@@ -31,11 +32,11 @@ wss.on('connection', function connection(ws: WebSocketClient) {
 
     ws.on('close', () => {
         try {
-            if (playerData) {
-                playerDatabase.delete(playerData.index);
-                roomDatabase.removePlayer(playerData.index)
-                wss.clients.forEach(client => client.send(JSON.stringify(updateRoomStatus())))
-            }
+
+            playerDatabase.delete(ws.id);
+            roomDatabase.removePlayer(ws.id)
+            wss.clients.forEach(client => client.send(JSON.stringify(updateRoomStatus())))
+
         } catch (err) {
             if (err instanceof Error)
                 console.log(err.message)
@@ -61,7 +62,7 @@ wss.on('connection', function connection(ws: WebSocketClient) {
 
                         const roomId = roomCount()
                         roomDatabase.createRoom(roomId);
-                        roomDatabase.addPlayer(playerData.index, roomId)
+                        roomDatabase.addPlayer(ws.id, roomId)
                         const freePlayers = playerDatabase.available()
                         freePlayers.forEach(pl => {
                             pl.ws.send(updateWinners());
@@ -72,35 +73,36 @@ wss.on('connection', function connection(ws: WebSocketClient) {
 
                 case "create_room":
                     {
-                        if (playerData) {
-                            const roomId = roomCount()
-                            roomDatabase.createRoom(roomId);
-                            addPlayerToRoom(playerData.index, roomId)
-                            const freePlayers = playerDatabase.available()
-                            freePlayers.forEach(pl => pl.ws.send(JSON.stringify(updateRoomStatus())))
-                        }
+
+                        const roomId = roomCount()
+                        roomDatabase.createRoom(roomId);
+
+                        addPlayerToRoom(ws.id, roomId)
+                        const freePlayers = playerDatabase.available()
+                        freePlayers.forEach(pl => pl.ws.send(JSON.stringify(updateRoomStatus())))
+
                         break;
                     }
 
                 case "add_user_to_room":
-                    if (playerData) {
-                        const parsedRoomInfo = JSON.parse(parsedData.data);
-                        const roomId = parsedRoomInfo?.indexRoom;
-                        addPlayerToRoom(playerData.index, roomId)
-                        const freePlayers = playerDatabase.available()
-                        freePlayers.forEach(pl => pl.ws.send(JSON.stringify(updateRoomStatus())))
-                        const ready = readinessCheck(roomId)
-                        if (ready) {
-                            const readyPlayers = playerDatabase.get().filter(pl => pl.room === roomId)
-                            const gameid = gameID()
-                            console.log("gameid started", gameid)
-                            console.log(`players:  ${readyPlayers[0].name} and ${readyPlayers[1].name} from room ${roomId}`)
 
-                            readyPlayers[0].ws.send(createGame(gameid, readyPlayers[0]));
-                            readyPlayers[1].ws.send(createGame(gameid, readyPlayers[1]));
-                        }
+                    const parsedRoomInfo = JSON.parse(parsedData.data);
+                    const roomId = parsedRoomInfo?.indexRoom;
+                    addPlayerToRoom(ws.id, roomId)
+                    const freePlayers = playerDatabase.available()
+                    freePlayers.forEach(pl => pl.ws.send(JSON.stringify(updateRoomStatus())))
+                    const ready = readinessCheck(roomId)
+                    if (ready) {
+                        const readyPlayers = playerDatabase.get().filter(pl => pl.room === roomId)
+                        const gameid = gameID()
+                        console.log("gameid started", gameid)
+                        console.log(`players:  ${readyPlayers[0].name} and ${readyPlayers[1].name} from room ${roomId}`)
 
+                        readyPlayers[0].ws.send(createGame(gameid, readyPlayers[0]));
+                        readyPlayers[1].ws.send(createGame(gameid, readyPlayers[1]));
                     }
+
+
                     break;
 
                 case "add_ships": {
@@ -165,10 +167,8 @@ wss.on('connection', function connection(ws: WebSocketClient) {
 
                         const roomId = roomCount();
                         roomDatabase.createRoom(roomId);
+                        addPlayerToRoom(ws.id, roomId)
 
-                        if (playerData) {
-                            addPlayerToRoom(playerData.index, roomId)
-                        }
                     }
                     break;
                 }
@@ -201,10 +201,7 @@ wss.on('connection', function connection(ws: WebSocketClient) {
 
                         const roomId = roomCount();
                         roomDatabase.createRoom(roomId);
-
-                        if (playerData) {
-                            addPlayerToRoom(playerData.index, roomId)
-                        }
+                        addPlayerToRoom(ws.id, roomId)
                     }
                     break;
                 }
@@ -214,7 +211,6 @@ wss.on('connection', function connection(ws: WebSocketClient) {
 
                 }
             }
-
 
 
         } catch (err) {
