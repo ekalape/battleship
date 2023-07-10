@@ -1,4 +1,4 @@
-import { IRoom } from '../utils/types';
+/* import { IRoom } from '../utils/types';
 import playerDatabase from './PlayerDatabase';
 
 
@@ -49,4 +49,4 @@ const roomDatabase = new RoomDatabase();
 
 Object.freeze(roomDatabase);
 
-export default roomDatabase;
+export default roomDatabase; */

@@ -10,6 +10,8 @@ export interface IMessage {
     id: number
 }
 
+
+
 export interface IPlayer {
     name: string,
     index: number,
@@ -21,7 +23,6 @@ export interface IPlayer {
     turn: boolean,
     wins: number,
     ws: WebSocketClient
-
 }
 
 export type regRequestType = {
