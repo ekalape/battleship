@@ -12,6 +12,9 @@ export const attackHandler = (aPos: IShipPosition, gameId: number, indexPlayer: 
         if (opponent.matrix[x][y] === "0") {
             result = "miss"
         }
+        else if (opponent.matrix[x][y] === "x") {
+            return;
+        }
         else {
             result = updateMatrix(opponent.matrix, x, y);
             opponent.matrix[x][y] = "x";

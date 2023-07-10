@@ -58,6 +58,8 @@ export const findByRoom = (roomIndex: number) => {
 }
 
 
+
+
 export const findByIndex = (playerIndex: number) => {
 
     const result = Array.from(database.entries())

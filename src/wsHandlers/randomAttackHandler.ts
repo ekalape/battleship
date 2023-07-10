@@ -10,9 +10,13 @@ export const randomAttackHandler = (gameId: number, indexPlayer: number) => {
         coords = createRandomCoords()
     } while (opponent?.matrix[coords.x][coords.y] === "x")
 
-    const { response, hit } = attackHandler(coords, gameId, indexPlayer)
+    const attackResult = attackHandler(coords, gameId, indexPlayer)
+    if (attackResult) {
 
-    return { response, hit }
+        return { response: attackResult.response, hit: attackResult.hit }
+    }
+    else return;
+
 };
 
 
