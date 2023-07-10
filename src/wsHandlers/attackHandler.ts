@@ -1,9 +1,10 @@
 import playerDatabase from '../database/PlayerDatabase';
+import database, { findByGame } from '../database/database';
 import { IShipPosition } from '../utils/types';
 
 
 export const attackHandler = (aPos: IShipPosition, gameId: number, indexPlayer: number) => {
-    const opponent = playerDatabase.byGame(gameId).find(pl => pl.index !== indexPlayer);
+    const opponent = findByGame(gameId).map(w => database.get(w)).find(pl => pl?.index !== indexPlayer);
     let result = "";
     if (opponent) {
         const { x, y } = aPos;

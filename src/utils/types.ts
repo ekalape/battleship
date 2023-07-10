@@ -64,6 +64,12 @@ export interface IShip {
     type: "small" | "medium" | "large" | "huge",
 }
 
+export type AddShipsType = {
+    gameId: number,
+    ships: IShip[],
+    indexPlayer: number
+}
+
 export type ShipsType = {
     ships: IShip[]
 }

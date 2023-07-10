@@ -1,6 +1,6 @@
 import WebSocket, { WebSocketServer } from 'ws';
 import { regHandler } from '../wsHandlers/regHandler';
-import { IMessage, RegResponseType, WebSocketClient, regRequestType } from '../utils/types';
+import { AddShipsType, IMessage, RegResponseType, WebSocketClient, regRequestType } from '../utils/types';
 import { updateRoomStatus } from '../wsHandlers/roomStatusHandler';
 //import roomDatabase from '../database/RoomDatabase';
 import playerDatabase from '../database/PlayerDatabase';
@@ -17,7 +17,7 @@ import { updateWinners } from '../wsHandlers/updateWinners';
 import { winCheck, winnerResponse } from '../utils/winCheck';
 import { httpServer } from '../http_server';
 import Player from '../utils/Player';
-import database, { findAvailable, findByRoom, findWaiting } from '../database/database';
+import database, { findAvailable, findByGame, findByIndex, findByRoom, findWaiting } from '../database/database';
 import { nameValidation } from '../utils/nameValidation';
 
 
@@ -116,6 +116,7 @@ wss.on('connection', function connection(ws: WebSocket) {
                         const players = findByRoom(playerData.indexRoom);
                         if (players.length === 2) {
                             const gameId = gameID()
+
                             players[0].send(createGame(players[0], gameId))
                             players[1].send(createGame(players[1], gameId))
                         }
@@ -146,7 +147,29 @@ wss.on('connection', function connection(ws: WebSocket) {
 
 
                 case "add_ships": {
-                    const gamedata = JSON.parse(parsedData.data)
+                    const startingData: AddShipsType = JSON.parse(parsedData.data)
+
+                    const playersWs = findByGame(startingData.gameId);
+                    const players = playersWs.map(w => database.get(w)) as Player[]
+
+                    const actualPlayer = database.get(ws)
+                    if (actualPlayer) {
+                        actualPlayer.ships = startingData.ships;
+                        actualPlayer.matrix = shipsToMatrix(startingData.ships)
+                    }
+
+                    if (players.every(pl => pl?.ships && pl?.ships.length > 0)) {
+                        const startResponse0 = startGame(players[0] as Player);
+                        const startResponse1 = startGame(players[1] as Player);
+                        playersWs[0].send(startResponse0);
+                        playersWs[1].send(startResponse1);
+                    }
+
+                    const turnResponse = changeTurnHandler(players, true)
+                    console.log(turnResponse)
+                    playersWs.forEach(w => w.send(turnResponse))
+
+
                     /*    const player = playerDatabase.getSinglePlayer(gamedata.indexPlayer);
    
                        player.ships = gamedata.ships;
@@ -173,7 +196,31 @@ wss.on('connection', function connection(ws: WebSocket) {
                 }
 
                 case "attack": {
-                    /*      const attackData = JSON.parse(parsedData.data);
+                    const { x, y, gameId, indexPlayer } = JSON.parse(parsedData.data);
+                    const player = database.get(ws)
+                    if (!player?.turn) {
+                        break;
+                    }
+
+                    const playersWs = findByGame(gameId);
+                    const players = playersWs.map(w => database.get(w)) as Player[]
+                    if (playersWs) {
+                        const { response, hit } = attackHandler({ x, y }, gameId, indexPlayer)
+                        let turnResponse: string;
+                        if (hit) { turnResponse = changeTurnHandler(players, false) }
+                        else {
+                            turnResponse = changeTurnHandler(players, true)
+                        }
+                        playersWs.forEach(pl => {
+                            pl.send(response);
+                            pl.send(turnResponse);
+
+                        })
+                    }
+
+
+
+                    /*      
                          const { x, y, gameId, indexPlayer } = attackData;
                          const players = playerDatabase.byGame(gameId);
                          if (players.find(pl => pl.turn === true)?.index !== indexPlayer) {
@@ -254,8 +301,10 @@ wss.on('connection', function connection(ws: WebSocket) {
 
 
         } catch (err) {
-            if (err instanceof Error)
+            if (err instanceof Error) {
                 console.log(err.message)
+                console.log(err.stack)
+            }
             else console.log("Unknown Error")
         }
     });
