@@ -3,9 +3,8 @@ import database, { findWaiting } from '../database/database';
 import { IMessage } from '../utils/types';
 
 export const updateRoomStatus = () => {
-    //([database.get(ws)?.room, database.get(ws)?.name, database.get(ws)?.index])
 
-    const availableRooms = findWaiting().map(ws => ({ roomId: database.get(ws)?.room, roomUsers: [{ name: database.get(ws)?.name, index: database.get(ws)?.index }] }))
+    const availableRooms = findWaiting(false).map(ws => ({ roomId: database.get(ws)?.room, roomUsers: [{ name: database.get(ws)?.name, index: database.get(ws)?.index }] }))
 
     const data = JSON.stringify(availableRooms)
     const response = JSON.stringify({

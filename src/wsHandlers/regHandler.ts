@@ -28,7 +28,6 @@ export function regHandler(playerName:string, playerPassword:string, ws:WebSocke
     }
 
 
-
     const response={
         type:"reg",
         data,

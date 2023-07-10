@@ -16,18 +16,24 @@ export const findAvailable = () => {
     return result;
 }
 
-export const findWaiting = () => {
+export const findWaiting = (full: boolean) => {
 
     const allRooms = Array.from(database.entries())
         .map(([, value]) => value.room);
+    console.log("allRooms --> ", JSON.stringify(allRooms))
     const roomMap = new Map();
     allRooms.forEach(r => {
-        if (roomMap.has(r)) { roomMap.set(r, roomMap.get(r) + 1) }
-        else roomMap.set(r, 1)
+        if (!roomMap.has(r)) { roomMap.set(r, 1); console.log(`inside cycle r=${r}, map= ${roomMap.get(r)}`) }
+        else {
+            roomMap.set(r, roomMap.get(r) + 1);
+            console.log(`inside cycle r=${r}, map= ${roomMap.get(r)}`)
+        }
     })
+    console.log("roomMap --> ", roomMap)
     const singleRooms = Array.from(roomMap.entries()).filter(([, val]) => val === 1).map(r => r[0]).map(r => findByRoom(r)[0])
+    const fullRooms = Array.from(roomMap.entries()).filter(([, val]) => val === 2).map(r => r[0]).map(r => findByRoom(r)[0])
 
-    return singleRooms;
+    return full ? fullRooms : singleRooms;
 }
 
 

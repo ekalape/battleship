@@ -11,7 +11,6 @@ export interface IMessage {
 }
 
 
-
 export interface IPlayer {
     name: string,
     index: number,
