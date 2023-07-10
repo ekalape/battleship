@@ -1,7 +1,9 @@
 import playerDatabase from '../database/PlayerDatabase';
+import database, { findByGame } from '../database/database';
+import Player from './Player';
 
 export const winCheck = (gameId: number) => {
-    const players = playerDatabase.byGame(gameId);
+    const players = findByGame(gameId).map(w => database.get(w) as Player);
     if (hasAliveShip(players[0].matrix)) {
         players[1].wins += 1;
         return players[1].index

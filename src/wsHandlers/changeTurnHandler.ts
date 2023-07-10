@@ -4,9 +4,7 @@ import Player from '../utils/Player';
 import { IPlayer } from '../utils/types';
 
 export const changeTurnHandler = (players: Player[], change: boolean) => {
-    console.log(`inside turnChanger players ---> ${JSON.stringify(players)}`)
 
-    /* if (players[0] && players[1]) { */
     if (change) {
         players.forEach(pl => { if (pl) pl.turn = !pl.turn });
     }
@@ -27,11 +25,6 @@ export const changeTurnHandler = (players: Player[], change: boolean) => {
         id: 0,
     })
     return response;
-    /*   } else throw Error("No players found") */
-
-
-
-
 
     /*     const players = playerDatabase.byGame(gameId);
         console.log(`inside turn changer ==> ${JSON.stringify(players.map(pl => ({ pl: pl.index, turn: pl.turn })))}`)

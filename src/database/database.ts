@@ -23,12 +23,15 @@ export const findWaiting = (full: boolean) => {
     // console.log("allRooms --> ", JSON.stringify(allRooms))
     const roomMap = new Map();
     allRooms.forEach(r => {
-        if (!roomMap.has(r)) {
-            roomMap.set(r, 1); //console.log(`inside cycle r=${r}, map= ${roomMap.get(r)}`) 
-        }
-        else {
-            roomMap.set(r, roomMap.get(r) + 1);
-            //console.log(`inside cycle r=${r}, map= ${roomMap.get(r)}`)
+        if (r !== null) {
+
+            if (!roomMap.has(r)) {
+                roomMap.set(r, 1); //console.log(`inside cycle r=${r}, map= ${roomMap.get(r)}`) 
+            }
+            else {
+                roomMap.set(r, roomMap.get(r) + 1);
+                //console.log(`inside cycle r=${r}, map= ${roomMap.get(r)}`)
+            }
         }
     })
     console.log("roomMap --> ", roomMap)

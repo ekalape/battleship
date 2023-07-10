@@ -64,9 +64,11 @@ wss.on('connection', function connection(ws: WebSocket) {
                         console.log("findWaiting >> ", findWaiting(false).map(w => database.get(w)?.index))
                         console.log("findAvailable >> ", findAvailable().map(w => database.get(w)?.index));
                         ws.send(response)
-                        findAvailable().forEach(pl => {
-                            pl.send(updateRoomStatus())
+                        wss.clients.forEach(pl => {
+                            pl.send(updateRoomStatus());
+                            pl.send(updateWinners())
                         })
+
 
                         /*    response.type = "reg";
                            const socketIndex = playerCount()
@@ -92,7 +94,7 @@ wss.on('connection', function connection(ws: WebSocket) {
                         const player = database.get(ws);
                         if (player) {
                             addPlayerToRoom(player, roomId)
-                            findAvailable().forEach(pl => {
+                            wss.clients.forEach(pl => {
                                 pl.send(updateRoomStatus())
                             })
                         }
@@ -120,7 +122,7 @@ wss.on('connection', function connection(ws: WebSocket) {
                             players[0].send(createGame(players[0], gameId))
                             players[1].send(createGame(players[1], gameId))
                         }
-                        findAvailable().forEach(pl => {
+                        wss.clients.forEach(pl => {
                             pl.send(updateRoomStatus())
                         })
                     }
@@ -217,6 +219,23 @@ wss.on('connection', function connection(ws: WebSocket) {
 
                         })
                     }
+                    const winner = winCheck(gameId)
+                    if (winner) {
+                        const winResponse = winnerResponse(winner)
+                        playersWs.forEach(pl => {
+                            pl.send(winResponse);
+                        });
+                        resetPlayers(player);
+                        /*    if (player.room === null) {
+                               const roomId = roomCount();
+                               addPlayerToRoom(player, roomId)
+                           } */
+
+                        Array.from(database.keys()).forEach(pl => {
+                            pl.send(updateWinners());
+                            pl.send(updateRoomStatus())
+                        })
+                    }
 
 
 
@@ -261,7 +280,40 @@ wss.on('connection', function connection(ws: WebSocket) {
                 }
 
                 case "randomAttack": {
-                    /*      const { gameId, indexPlayer } = JSON.parse(parsedData.data);
+                    const { gameId, indexPlayer } = JSON.parse(parsedData.data)
+                    const player = database.get(ws)
+                    if (!player?.turn) {
+                        break;
+                    }
+                    const playersWs = findByGame(gameId);
+                    const players = playersWs.map(w => database.get(w)) as Player[]
+                    const { response, hit } = randomAttackHandler(gameId, indexPlayer);
+                    let turnResponse: string;
+                    if (hit) { turnResponse = changeTurnHandler(players, false) }
+                    else {
+                        turnResponse = changeTurnHandler(players, true)
+                    }
+                    playersWs.forEach(pl => {
+                        pl.send(response);
+                        pl.send(turnResponse);
+                    })
+                    const winner = winCheck(gameId)
+                    if (winner) {
+                        const winResponse = winnerResponse(winner)
+                        playersWs.forEach(pl => {
+                            pl.send(winResponse);
+                        });
+                        players.forEach(pl => {
+                            resetPlayers(pl);
+                        })
+
+                        Array.from(database.keys()).forEach(pl => {
+                            pl.send(updateWinners());
+                            pl.send(updateRoomStatus())
+                        })
+
+                    }
+                    /*      ;
                          const players = playerDatabase.byGame(gameId);
                          const { response, hit } = randomAttackHandler(gameId, indexPlayer);
                          let turnResponse: string;
