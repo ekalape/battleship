@@ -1,4 +1,4 @@
-import playerDatabase from '../database/PlayerDatabase';
+
 import database, { findByGame } from '../database/database';
 import { attackHandler } from './attackHandler';
 
@@ -12,8 +12,7 @@ export const randomAttackHandler = (gameId: number, indexPlayer: number) => {
 
     const attackResult = attackHandler(coords, gameId, indexPlayer)
     if (attackResult) {
-
-        return { response: attackResult.response, hit: attackResult.hit }
+        return { response: attackResult.response, hit: attackResult.hit, responseArray: attackResult.responseArray }
     }
     else return;
 

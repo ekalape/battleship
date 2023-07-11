@@ -1,10 +1,8 @@
 import WebSocket, { WebSocketServer } from 'ws';
 import { regHandler } from '../wsHandlers/regHandler';
-import { AddShipsType, IMessage, RegResponseType, WebSocketClient, regRequestType } from '../utils/types';
+import { AddShipsType, IMessage, RegResponseType, regRequestType } from '../utils/types';
 import { updateRoomStatus } from '../wsHandlers/roomStatusHandler';
-//import roomDatabase from '../database/RoomDatabase';
-import playerDatabase from '../database/PlayerDatabase';
-import { gameID, roomCount, playerCount } from '../utils/countID';
+import { gameID, roomCount } from '../utils/countID';
 import { createGame } from '../wsHandlers/createGame';
 import { addPlayerToRoom } from '../wsHandlers/addPlayerToRoom';
 import { startGame } from '../wsHandlers/startGame';
@@ -17,8 +15,9 @@ import { updateWinners } from '../wsHandlers/updateWinners';
 import { winCheck, winnerResponse } from '../utils/winCheck';
 import { httpServer } from '../http_server';
 import Player from '../utils/Player';
-import database, { findAvailable, findByGame, findByIndex, findByRoom, findWaiting } from '../database/database';
-import { nameValidation } from '../utils/nameValidation';
+import database, { findByGame, findByRoom } from '../database/database';
+import { handleKilledShip } from '../utils/handleKilledShip';
+
 
 
 
@@ -50,6 +49,7 @@ wss.on('connection', function connection(ws: WebSocket) {
                     pl.send(updateRoomStatus())
                 })
             }
+            console.log(`Player ${player?.name} is leaving game`);
             database.delete(ws)
 
         } catch (err) {
@@ -57,7 +57,7 @@ wss.on('connection', function connection(ws: WebSocket) {
                 console.log(err.message)
             else console.log("Unknown Error")
         }
-        console.log('closing ws');
+
     });
 
     ws.on('message', function message(data) {
@@ -66,37 +66,28 @@ wss.on('connection', function connection(ws: WebSocket) {
             const parsedData = JSON.parse(data.toString());
             console.log(`\ntype ---> ${parsedData.type}`)
 
-
             switch (parsedData.type) {
                 case "reg":
-                    {
-                        const playerData: regRequestType = JSON.parse(parsedData.data);
-                        const response = regHandler(playerData.name, playerData.password, ws)
-                        console.log("response >> ", response)
-                        console.log("findWaiting >> ", findWaiting(false).map(w => database.get(w)?.index))
-                        console.log("findAvailable >> ", findAvailable().map(w => database.get(w)?.index));
-                        ws.send(response)
-                        wss.clients.forEach(pl => {
-                            pl.send(updateRoomStatus());
-                            pl.send(updateWinners())
-                        })
+                    const playerData: regRequestType = JSON.parse(parsedData.data);
+                    const response = regHandler(playerData.name, playerData.password, ws)
+                    ws.send(response)
+                    wss.clients.forEach(pl => {
+                        pl.send(updateRoomStatus());
+                        pl.send(updateWinners())
+                    })
 
-                        break;
-                    }
+                    break;
 
                 case "create_room":
-                    {
-                        const roomId = roomCount()
-                        const player = database.get(ws);
-                        if (player) {
-                            addPlayerToRoom(player, roomId)
-                            wss.clients.forEach(pl => {
-                                pl.send(updateRoomStatus())
-                            })
-                        }
-
-                        break;
+                    const roomId = roomCount()
+                    const player = database.get(ws);
+                    if (player) {
+                        addPlayerToRoom(player, roomId)
+                        wss.clients.forEach(pl => {
+                            pl.send(updateRoomStatus())
+                        })
                     }
+                    break;
 
                 case "add_user_to_room": {
                     const playerData: { indexRoom: number } = JSON.parse(parsedData.data);
@@ -120,10 +111,8 @@ wss.on('connection', function connection(ws: WebSocket) {
 
                 case "add_ships": {
                     const startingData: AddShipsType = JSON.parse(parsedData.data)
-
                     const playersWs = findByGame(startingData.gameId);
                     const players = playersWs.map(w => database.get(w)) as Player[]
-
                     const actualPlayer = database.get(ws)
                     if (actualPlayer) {
                         actualPlayer.ships = startingData.ships;
@@ -157,25 +146,29 @@ wss.on('connection', function connection(ws: WebSocket) {
                         const attackResult = attackHandler({ x, y }, gameId, indexPlayer)
                         if (!attackResult) {
                             turnResponse = changeTurnHandler(players, false);
-                            /*                             playersWs.forEach(pl => {                          
-                                                            pl.send(turnResponse);
-                                
-                                                        }) */
                             ws.send(turnResponse)
 
                             break
                         };
-
-                        const { response, hit } = attackResult;
-
-                        if (hit) { turnResponse = changeTurnHandler(players, false) }
+                        const { response, hit, responseArray } = attackResult;
+                        if (["killed", "shot"].includes(hit)) { turnResponse = changeTurnHandler(players, false) }
                         else {
                             turnResponse = changeTurnHandler(players, true)
                         }
                         playersWs.forEach(pl => {
                             pl.send(response);
+                        })
+                        if (responseArray) {
+                            if (responseArray) {
+                                responseArray.forEach(res => {
+                                    playersWs.forEach(pl => {
+                                        pl.send(res);
+                                    })
+                                })
+                            }
+                        }
+                        playersWs.forEach(pl => {
                             pl.send(turnResponse);
-
                         })
                     }
                     const winner = winCheck(gameId)
@@ -185,10 +178,6 @@ wss.on('connection', function connection(ws: WebSocket) {
                             pl.send(winResponse);
                         });
                         resetPlayers(player);
-                        /*    if (player.room === null) {
-                               const roomId = roomCount();
-                               addPlayerToRoom(player, roomId)
-                           } */
 
                         Array.from(database.keys()).forEach(pl => {
                             pl.send(updateWinners());
@@ -208,14 +197,25 @@ wss.on('connection', function connection(ws: WebSocket) {
                     const players = playersWs.map(w => database.get(w)) as Player[]
                     const attackResult = randomAttackHandler(gameId, indexPlayer);
                     if (!attackResult) break;
-                    const { response, hit } = attackResult;
+                    const { response, hit, responseArray } = attackResult;
                     let turnResponse: string;
-                    if (hit) { turnResponse = changeTurnHandler(players, false) }
+                    if (["killed", "shot"].includes(hit)) { turnResponse = changeTurnHandler(players, false) }
                     else {
                         turnResponse = changeTurnHandler(players, true)
                     }
                     playersWs.forEach(pl => {
                         pl.send(response);
+                    })
+                    if (responseArray) {
+                        if (responseArray) {
+                            responseArray.forEach(res => {
+                                playersWs.forEach(pl => {
+                                    pl.send(res);
+                                })
+                            })
+                        }
+                    }
+                    playersWs.forEach(pl => {
                         pl.send(turnResponse);
                     })
                     const winner = winCheck(gameId)

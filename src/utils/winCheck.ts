@@ -1,4 +1,4 @@
-import playerDatabase from '../database/PlayerDatabase';
+
 import database, { findByGame } from '../database/database';
 import Player from './Player';
 

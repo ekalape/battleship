@@ -1,27 +1,11 @@
 import WebSocket from 'ws';
 
 
-export interface WebSocketClient extends WebSocket {
-    id: number;
-}
+
 export interface IMessage {
     type: string | null,
     data: string,
     id: number
-}
-
-
-export interface IPlayer {
-    name: string,
-    index: number,
-    room: number | null,
-    currentGame: number | null,
-    placedShips: boolean,
-    ships: IShip[],
-    matrix: string[][],
-    turn: boolean,
-    wins: number,
-    ws: WebSocketClient
 }
 
 export type regRequestType = {
@@ -36,20 +20,9 @@ export type RegResponseType = {
     errorText: string
 }
 
-export type WinnersType = {
-    name: string,
-    wins: number
-}
-
 export type CreateGameType = {
     idGame: number,
     idPlayer: number,
-}
-
-export interface IRoom {
-    roomId: number,
-    roomUsers: Pick<IPlayer, "name" | "index">[]
-
 }
 
 export interface IShipPosition {
@@ -68,10 +41,6 @@ export type AddShipsType = {
     gameId: number,
     ships: IShip[],
     indexPlayer: number
-}
-
-export type ShipsType = {
-    ships: IShip[]
 }
 
 export type AttackDataType = {

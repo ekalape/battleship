@@ -1,11 +1,12 @@
-import playerDatabase from '../database/PlayerDatabase';
+
 import database, { findByGame } from '../database/database';
-import { IShipPosition } from '../utils/types';
+import { handleKilledShip } from '../utils/handleKilledShip';
+import { AttackDataType, IShipPosition } from '../utils/types';
 
 
 export const attackHandler = (aPos: IShipPosition, gameId: number, indexPlayer: number) => {
     const opponent = findByGame(gameId).map(w => database.get(w)).find(pl => pl?.index !== indexPlayer);
-    let result = "";
+    let result: "miss" | "killed" | "shot" = "miss";
     if (opponent) {
         const { x, y } = aPos;
 
@@ -21,7 +22,7 @@ export const attackHandler = (aPos: IShipPosition, gameId: number, indexPlayer: 
         }
 
     }
-    const attackResponse = { position: aPos, currentPlayer: indexPlayer, status: result }
+    const attackResponse: AttackDataType = { position: aPos, currentPlayer: indexPlayer, status: result }
     const data = JSON.stringify(attackResponse)
     const response = JSON.stringify({
         type: "attack",
@@ -29,7 +30,11 @@ export const attackHandler = (aPos: IShipPosition, gameId: number, indexPlayer: 
         id: 0
 
     })
-    return { response, hit: result === "miss" ? false : true };
+    let responseArray;
+    if (result === "killed") {
+        responseArray = handleKilledShip(aPos, indexPlayer, gameId)
+    }
+    return { response, hit: result, responseArray };
 }
 
 function updateMatrix(matrix: string[][], x: number, y: number) {
