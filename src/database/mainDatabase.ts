@@ -1,12 +1,13 @@
 import Player from '../utils/Player';
 import WebSocket from 'ws'
 
-const database: Map<WebSocket, Player> = new Map()
+const mainDatabase: Map<WebSocket, Player> = new Map()
 
-export default database;
+export default mainDatabase;
 
 export const findWaiting = (full: boolean) => {
-    const allRooms = Array.from(database.entries())
+    const allRooms = Array.from(mainDatabase.entries())
+        .filter(([, value]) => value.singleplay === false)
         .map(([, value]) => value.room);
 
     const roomMap = new Map();
@@ -29,13 +30,13 @@ export const findWaiting = (full: boolean) => {
 
 
 export const getAllNames = () => {
-    return Array.from(database.entries())
+    return Array.from(mainDatabase.entries())
         .map(([, value]) => value.name);
 }
 
 
 export const findByRoom = (roomIndex: number) => {
-    const result = Array.from(database.entries())
+    const result = Array.from(mainDatabase.entries())
         .filter(([, value]) => value.room === roomIndex)
         .map(([key]) => key);
 
@@ -44,7 +45,7 @@ export const findByRoom = (roomIndex: number) => {
 
 
 export const findByIndex = (playerIndex: number) => {
-    const result = Array.from(database.entries())
+    const result = Array.from(mainDatabase.entries())
         .filter(([, value]) => value.index === playerIndex)
         .map(([ws, pl]) => ({ ws, pl }));
 
@@ -53,7 +54,7 @@ export const findByIndex = (playerIndex: number) => {
 
 
 export const findByGame = (gameId: number) => {
-    const result = Array.from(database.entries())
+    const result = Array.from(mainDatabase.entries())
         .filter(([, value]) => value.currentGame === gameId)
         .map(([key]) => key);
 

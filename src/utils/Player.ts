@@ -12,6 +12,7 @@ export default class Player {
     turn: boolean
     wins: number
     password: string
+    singleplay: boolean
     constructor(name: string, password: string) {
         this.name = name;
         this.password = password;
@@ -21,7 +22,8 @@ export default class Player {
         this.ships = [];
         this.matrix = [];
         this.turn = false;
-        this.wins = 0
+        this.wins = 0;
+        this.singleplay = false;
     }
 
 }

@@ -1,10 +1,10 @@
 
-import database, { findWaiting } from '../database/database';
-import { IMessage } from '../utils/types';
+import mainDatabase, { findWaiting } from '../database/mainDatabase';
+
 
 export const updateRoomStatus = () => {
 
-    const availableRooms = findWaiting(false).map(ws => ({ roomId: database.get(ws)?.room, roomUsers: [{ name: database.get(ws)?.name, index: database.get(ws)?.index }] }))
+    const availableRooms = findWaiting(false).map(ws => ({ roomId: mainDatabase.get(ws)?.room, roomUsers: [{ name: mainDatabase.get(ws)?.name, index: mainDatabase.get(ws)?.index }] }))
 
     const data = JSON.stringify(availableRooms)
     const response = JSON.stringify({
@@ -15,11 +15,3 @@ export const updateRoomStatus = () => {
     })
     return response
 }
-
-
-/* export const readinessCheck = (roomId: number) => {
-    const room = roomDatabase.get().find(r => r.roomId === roomId);
-    if (!room) throw new Error("No room found")
-    if (room.roomUsers.length === 2) return true;
-    else return false;
-} */

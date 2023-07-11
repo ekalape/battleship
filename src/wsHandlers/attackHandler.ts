@@ -1,11 +1,11 @@
 
-import database, { findByGame } from '../database/database';
+import mainDatabase, { findByGame } from '../database/mainDatabase';
 import { handleKilledShip } from '../utils/handleKilledShip';
 import { AttackDataType, IShipPosition } from '../utils/types';
 
 
 export const attackHandler = (aPos: IShipPosition, gameId: number, indexPlayer: number) => {
-    const opponent = findByGame(gameId).map(w => database.get(w)).find(pl => pl?.index !== indexPlayer);
+    const opponent = findByGame(gameId).map(w => mainDatabase.get(w)).find(pl => pl?.index !== indexPlayer);
     let result: "miss" | "killed" | "shot" = "miss";
     if (opponent) {
         const { x, y } = aPos;

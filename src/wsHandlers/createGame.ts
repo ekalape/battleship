@@ -1,14 +1,12 @@
-import playerDatabase from '../database/PlayerDatabase'
-import database, { findByRoom } from '../database/database';
-import Player from '../utils/Player';
-import { gameID } from '../utils/countID';
-import { IPlayer } from '../utils/types'
+
+import mainDatabase from '../database/mainDatabase';
+
 import WebSocket from 'ws';
 
-export const createGame = (ws: WebSocket | undefined, gameId: number) => {
+export const createGame = (ws: WebSocket, gameId: number) => {
     if (!ws) throw new Error(`Player not found`);
 
-    const player = database.get(ws)
+    const player = mainDatabase.get(ws)
 
     if (!player) throw new Error(`Player not found`)
 
@@ -24,18 +22,6 @@ export const createGame = (ws: WebSocket | undefined, gameId: number) => {
     })
     return response;
 
-
-
-    /*     playerDatabase.getSinglePlayer(opponent.index).currentGame = gameId;
-        const gameData = JSON.stringify({
-            idGame: gameId,
-            idPlayer: opponent.index
-        })
-        const response = JSON.stringify({
-            type: "create_game",
-            data: gameData,
-            id: 0
-        }) */
 
 
 }

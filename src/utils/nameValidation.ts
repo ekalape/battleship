@@ -1,5 +1,4 @@
-import playerDatabase from '../database/PlayerDatabase';
-import database, { getAllNames } from '../database/database';
+import mainDatabase, { getAllNames } from '../database/mainDatabase';
 
 export const nameValidation = (name: string, password: string) => {
 

@@ -1,10 +1,10 @@
 
-import database, { findByGame } from '../database/database';
+import mainDatabase, { findByGame } from '../database/mainDatabase';
 import { attackHandler } from './attackHandler';
 
 export const randomAttackHandler = (gameId: number, indexPlayer: number) => {
 
-    const opponent = findByGame(gameId).map(w => database.get(w)).find(pl => pl?.index !== indexPlayer);
+    const opponent = findByGame(gameId).map(w => mainDatabase.get(w)).find(pl => pl?.index !== indexPlayer);
     let coords: { x: number, y: number };
     do {
         coords = createRandomCoords()

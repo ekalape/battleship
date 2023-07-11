@@ -15,10 +15,8 @@ import { updateWinners } from '../wsHandlers/updateWinners';
 import { winCheck, winnerResponse } from '../utils/winCheck';
 import { httpServer } from '../http_server';
 import Player from '../utils/Player';
-import database, { findByGame, findByRoom } from '../database/database';
-import { handleKilledShip } from '../utils/handleKilledShip';
-
-
+import mainDatabase, { findByGame, findByRoom } from '../database/mainDatabase';
+import { botHandler } from '../wsHandlers/botHandler';
 
 
 const wss = new WebSocketServer({ server: httpServer });
@@ -34,9 +32,9 @@ wss.on('connection', function connection(ws: WebSocket) {
 
     ws.on('close', () => {
         try {
-            const player = database.get(ws);
+            const player = mainDatabase.get(ws);
             if (player?.currentGame) {
-                const opponent = Array.from(database.entries()).find(([, value]) => value.currentGame === player.currentGame && value.index !== player.index);
+                const opponent = Array.from(mainDatabase.entries()).find(([, value]) => value.currentGame === player.currentGame && value.index !== player.index);
                 if (opponent) {
                     const winResponse = winnerResponse(opponent[1].index);
                     opponent[0].send(winResponse)
@@ -50,7 +48,7 @@ wss.on('connection', function connection(ws: WebSocket) {
                 })
             }
             console.log(`Player ${player?.name} is leaving game`);
-            database.delete(ws)
+            mainDatabase.delete(ws)
 
         } catch (err) {
             if (err instanceof Error)
@@ -80,7 +78,7 @@ wss.on('connection', function connection(ws: WebSocket) {
 
                 case "create_room":
                     const roomId = roomCount()
-                    const player = database.get(ws);
+                    const player = mainDatabase.get(ws);
                     if (player) {
                         addPlayerToRoom(player, roomId)
                         wss.clients.forEach(pl => {
@@ -91,7 +89,7 @@ wss.on('connection', function connection(ws: WebSocket) {
 
                 case "add_user_to_room": {
                     const playerData: { indexRoom: number } = JSON.parse(parsedData.data);
-                    const player = database.get(ws)
+                    const player = mainDatabase.get(ws)
                     if (player) {
                         addPlayerToRoom(player, playerData.indexRoom);
 
@@ -111,9 +109,11 @@ wss.on('connection', function connection(ws: WebSocket) {
 
                 case "add_ships": {
                     const startingData: AddShipsType = JSON.parse(parsedData.data)
+                    const actualPlayer = mainDatabase.get(ws)
+
+
                     const playersWs = findByGame(startingData.gameId);
-                    const players = playersWs.map(w => database.get(w)) as Player[]
-                    const actualPlayer = database.get(ws)
+                    const players = playersWs.map(w => mainDatabase.get(w)) as Player[]
                     if (actualPlayer) {
                         actualPlayer.ships = startingData.ships;
                         actualPlayer.matrix = shipsToMatrix(startingData.ships)
@@ -134,13 +134,13 @@ wss.on('connection', function connection(ws: WebSocket) {
 
                 case "attack": {
                     const { x, y, gameId, indexPlayer } = JSON.parse(parsedData.data);
-                    const player = database.get(ws)
+                    const player = mainDatabase.get(ws)
                     if (!player?.turn) {
                         break;
                     }
 
                     const playersWs = findByGame(gameId);
-                    const players = playersWs.map(w => database.get(w)) as Player[]
+                    const players = playersWs.map(w => mainDatabase.get(w)) as Player[]
                     let turnResponse: string;
                     if (playersWs) {
                         const attackResult = attackHandler({ x, y }, gameId, indexPlayer)
@@ -179,7 +179,7 @@ wss.on('connection', function connection(ws: WebSocket) {
                         });
                         resetPlayers(player);
 
-                        Array.from(database.keys()).forEach(pl => {
+                        Array.from(mainDatabase.keys()).forEach(pl => {
                             pl.send(updateWinners());
                             pl.send(updateRoomStatus())
                         })
@@ -189,12 +189,12 @@ wss.on('connection', function connection(ws: WebSocket) {
 
                 case "randomAttack": {
                     const { gameId, indexPlayer } = JSON.parse(parsedData.data)
-                    const player = database.get(ws)
+                    const player = mainDatabase.get(ws)
                     if (!player?.turn) {
                         break;
                     }
                     const playersWs = findByGame(gameId);
-                    const players = playersWs.map(w => database.get(w)) as Player[]
+                    const players = playersWs.map(w => mainDatabase.get(w)) as Player[]
                     const attackResult = randomAttackHandler(gameId, indexPlayer);
                     if (!attackResult) break;
                     const { response, hit, responseArray } = attackResult;
@@ -228,11 +228,19 @@ wss.on('connection', function connection(ws: WebSocket) {
                             resetPlayers(pl);
                         })
 
-                        Array.from(database.keys()).forEach(pl => {
+                        Array.from(mainDatabase.keys()).forEach(pl => {
                             pl.send(updateWinners());
                             pl.send(updateRoomStatus())
                         })
                     }
+
+                    break;
+                }
+
+                case "single_play": {
+                    const singleplayResponse = botHandler(ws);
+                    ws.send(singleplayResponse);
+                    wss.clients.forEach(cl => cl.send(updateRoomStatus()))
 
                     break;
                 }

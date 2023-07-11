@@ -1,9 +1,9 @@
-import database, { findByGame } from '../database/database';
+import mainDatabase, { findByGame } from '../database/mainDatabase';
 import Player from './Player';
 import { IShip, IShipPosition } from './types';
 
 export const handleKilledShip = (coords: IShipPosition, index: number, gameId: number) => {
-    const opp = findByGame(gameId).map(w => database.get(w)).find(pl => pl?.index !== index) as Player
+    const opp = findByGame(gameId).map(w => mainDatabase.get(w)).find(pl => pl?.index !== index) as Player
     const { x, y } = coords;
     let ship: IShip | undefined;
     for (let sh of opp.ships) {
