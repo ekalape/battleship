@@ -2,11 +2,22 @@
 import mainDatabase, { findByGame } from '../database/mainDatabase';
 import { handleKilledShip } from '../utils/handleKilledShip';
 import { AttackDataType, IShipPosition } from '../utils/types';
+import botDatabase from '../database/botDatabase'
+import Player from '../utils/Player';
 
 
 export const attackHandler = (aPos: IShipPosition, gameId: number, indexPlayer: number) => {
     const opponent = findByGame(gameId).map(w => mainDatabase.get(w)).find(pl => pl?.index !== indexPlayer);
-    let result: "miss" | "killed" | "shot" = "miss";
+    if (!opponent) throw new Error("No opponent found for this player")
+    const result = attackCheck(aPos, opponent);
+    if (result) return attackResponse(aPos, indexPlayer, result, opponent)
+}
+
+
+export const attackCheck = (aPos: IShipPosition, opponent: Player) => {
+
+    let result: "miss" | "killed" | "shot" | undefined;
+
     if (opponent) {
         const { x, y } = aPos;
 
@@ -21,8 +32,12 @@ export const attackHandler = (aPos: IShipPosition, gameId: number, indexPlayer: 
             opponent.matrix[x][y] = "x";
         }
 
-    }
-    const attackResponse: AttackDataType = { position: aPos, currentPlayer: indexPlayer, status: result }
+    } return result;
+}
+
+export const attackResponse = (aPos: IShipPosition, indexPlayer: number, status: "miss" | "killed" | "shot", opp: Player) => {
+
+    const attackResponse: AttackDataType = { position: aPos, currentPlayer: indexPlayer, status }
     const data = JSON.stringify(attackResponse)
     const response = JSON.stringify({
         type: "attack",
@@ -31,10 +46,10 @@ export const attackHandler = (aPos: IShipPosition, gameId: number, indexPlayer: 
 
     })
     let responseArray;
-    if (result === "killed") {
-        responseArray = handleKilledShip(aPos, indexPlayer, gameId)
+    if (status === "killed") {
+        responseArray = handleKilledShip(aPos, indexPlayer, opp)
     }
-    return { response, hit: result, responseArray };
+    return { response, hit: status, responseArray };
 }
 
 function updateMatrix(matrix: string[][], x: number, y: number) {

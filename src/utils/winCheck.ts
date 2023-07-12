@@ -1,16 +1,29 @@
 
+import botDatabase from '../database/botDatabase';
 import mainDatabase, { findByGame } from '../database/mainDatabase';
 import Player from './Player';
 
-export const winCheck = (gameId: number) => {
-    const players = findByGame(gameId).map(w => mainDatabase.get(w) as Player);
-    if (hasAliveShip(players[0].matrix)) {
-        players[1].wins += 1;
-        return players[1].index
-    } else if (hasAliveShip(players[1].matrix)) {
-        players[0].wins += 1;
-        return players[0].index
-    } else return null;
+export const winCheck = (players: Player[]) => {
+    /*     const bot = botDatabase.find(b => b.currentGame === gameId);
+        let players;
+        if (bot) {
+            const player = mainDatabase.get(findByGame(gameId)[0])
+            players = [player, bot]
+        } else {
+            players = findByGame(gameId).map(w => mainDatabase.get(w) as Player);
+        } */
+    if (players[0] && players[1]) {
+        if (hasAliveShip(players[0].matrix)) {
+            players[1].wins += 1;
+            console.log(`players[1] ${players[1].name} with index ${players[1].index} win added ${players[1].wins} `)
+            return players[1].index
+        } else if (hasAliveShip(players[1].matrix)) {
+            players[0].wins += 1;
+            console.log(`players[0] ${players[0].name} with index ${players[0].index} win added ${players[0].wins} `)
+            return players[0].index
+        } else return null;
+    }
+
 };
 
 

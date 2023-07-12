@@ -48,3 +48,12 @@ export type AttackDataType = {
     currentPlayer: number,
     status: "miss" | "killed" | "shot",
 }
+
+export interface botFullResponse {
+    playersAttackResponse: string,
+    multiShot?: string[],
+    botAttack?: string,
+    botMultiShot?: string[],
+    turnResponse: string,
+
+}

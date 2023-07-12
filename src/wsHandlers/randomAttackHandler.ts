@@ -1,22 +1,35 @@
 
-import mainDatabase, { findByGame } from '../database/mainDatabase';
-import { attackHandler } from './attackHandler';
+import Player from '../utils/Player';
+import { attackCheck, attackResponse } from './attackHandler';
 
-export const randomAttackHandler = (gameId: number, indexPlayer: number) => {
+export const randomAttackHandler = (indexPlayer: number, opponent: Player) => {
 
-    const opponent = findByGame(gameId).map(w => mainDatabase.get(w)).find(pl => pl?.index !== indexPlayer);
     let coords: { x: number, y: number };
     do {
         coords = createRandomCoords()
     } while (opponent?.matrix[coords.x][coords.y] === "x")
 
-    const attackResult = attackHandler(coords, gameId, indexPlayer)
+    const attackResult = attackCheck(coords, opponent)
     if (attackResult) {
-        return { response: attackResult.response, hit: attackResult.hit, responseArray: attackResult.responseArray }
+        return attackResponse(coords, indexPlayer, attackResult, opponent)
     }
     else return;
 
 };
+
+export const botRandomAttack = (player: Player, bot: Player) => {
+    let coords: { x: number, y: number };
+    const gameId = player.currentGame
+    do {
+        coords = createRandomCoords()
+    } while (player?.matrix[coords.x][coords.y] === "x")
+
+    const attackResult = attackCheck(coords, player);
+    if (attackResult && gameId) {
+        return attackResponse(coords, bot.index, attackResult, player)
+    }
+    else return;
+}
 
 
 const createRandomCoords = () => {
