@@ -57,10 +57,13 @@ export const botReceivesAttack = (data: string, ws: WebSocket) => {
 }
 
 export const botAttack = (ws: WebSocket) => {
+
     const player = mainDatabase.get(ws) as Player;
     const bot = botDatabase.find(b => b.currentGame === player?.currentGame) as Player;
 
     return botRandomAttack(player, bot);
+
+
 }
 
 export const botTurnResponse = (player: Player) => {

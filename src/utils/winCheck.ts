@@ -1,6 +1,4 @@
 
-import botDatabase from '../database/botDatabase';
-import mainDatabase, { findByGame } from '../database/mainDatabase';
 import Player from './Player';
 
 export const winCheck = (players: Player[]) => {

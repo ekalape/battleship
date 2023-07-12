@@ -145,9 +145,8 @@ wss.on('connection', function connection(ws: WebSocket) {
                     }
                     if (player.singleplay) {
                         const bot = botDatabase.find(b => b.currentGame === player.currentGame) as Player
-                        console.log("attack from player > ", parsedData.data)
                         const botResponse = botReceivesAttack(parsedData.data, ws)
-
+                        ws.send(botTurnResponse(bot))
                         if (botResponse) {
                             const { response, hit, responseArray } = botResponse;
                             ws.send(response);
@@ -156,41 +155,17 @@ wss.on('connection', function connection(ws: WebSocket) {
                                     ws.send(res)
                                 })
                             }
-                            console.log("player hit >> ", hit)
-
-                            if (["killed", "shot"].includes(hit)) {
-                                ws.send(botTurnResponse(player));
-                                console.log("------- player turn -------")
-                            } else {
-                                console.log("------- bot turn start turn -------")
-                                player.turn = false;
-                                ws.send(botTurnResponse(bot))
-                                setTimeout(() => {
-                                    const botResponse = botAttack(ws);
-
-                                    if (botResponse) {
-                                        console.log("bot attack >> ", botResponse.response)
-                                        console.log("bot hit >> ", botResponse.hit)
-                                        ws.send(botResponse.response);
-                                        if (botResponse.responseArray) {
-                                            botResponse.responseArray.forEach(res => {
-                                                ws.send(res)
-                                            })
-                                        }
-                                        ws.send(botTurnResponse(player))
-                                        console.log("------- player turn -------")
-                                    }
-                                }, 600)
-                            }
-
                             const winner = winCheck([player, bot])
                             if (winner) {
                                 ws.send(winnerResponse(winner));
                                 resetBotAndPlayer(ws);
                             }
-
+                            if (["killed", "shot"].includes(hit)) {
+                                ws.send(botTurnResponse(player));
+                            } else {
+                                delayedResponse(ws)
+                            }
                         }
-
                     } else {
                         const playersWs = findByGame(gameId);
                         const players = playersWs.map(w => mainDatabase.get(w)) as Player[]
@@ -233,6 +208,7 @@ wss.on('connection', function connection(ws: WebSocket) {
                         }
 
                     }
+
                     Array.from(mainDatabase.keys()).forEach(pl => {
                         pl.send(updateWinners());
                         pl.send(updateRoomStatus())
@@ -315,5 +291,34 @@ wss.on('connection', function connection(ws: WebSocket) {
     });
 
 });
+
+const delayedResponse = (ws: WebSocket) => {
+    const player = mainDatabase.get(ws) as Player
+    const bot = botDatabase.find(b => b.currentGame === player?.currentGame) as Player
+
+    setTimeout(() => {
+        player.turn = false;
+        ws.send(botTurnResponse(bot))
+        const botResponse = botAttack(ws);
+        if (botResponse) {
+            console.log("bot attack >> ", botResponse.response)
+            console.log("bot hit >> ", botResponse.hit)
+            ws.send(botResponse.response);
+            if (botResponse.responseArray) {
+                botResponse.responseArray.forEach(res => {
+                    ws.send(res)
+                })
+            }
+        }
+        const winner = winCheck([player, bot])
+        if (winner) {
+            ws.send(winnerResponse(winner));
+            resetBotAndPlayer(ws);
+        }
+        if (botResponse && ["killed", "shot"].includes(botResponse.hit)) delayedResponse(ws)
+        else ws.send(botTurnResponse(player))
+    }, 600)
+
+}
 
 export default wss;
