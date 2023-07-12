@@ -1,5 +1,4 @@
 import Player from '../utils/Player';
-import WebSocket from 'ws'
 
 let botDatabase: Player[] = []
 

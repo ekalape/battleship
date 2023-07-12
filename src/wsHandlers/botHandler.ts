@@ -4,12 +4,12 @@ import { gameID, roomCount } from '../utils/countID'
 import { addPlayerToRoom } from './addPlayerToRoom'
 import Player from '../utils/Player'
 import { createGame } from './createGame'
-import { AddShipsType, botFullResponse } from '../utils/types'
+import { AddShipsType } from '../utils/types'
 import { shipsToMatrix } from '../utils/shipsToMatrix'
 import botDatabase from '../database/botDatabase'
 import { botShipsPositions } from '../utils/botShipsPositions'
 import { startGame } from './startGame'
-import { attackCheck, attackHandler, attackResponse } from './attackHandler'
+import { attackCheck, attackResponse } from './attackHandler'
 import { botRandomAttack } from './randomAttackHandler'
 
 export const botHandler = (playerWs: WebSocket) => {
@@ -57,7 +57,6 @@ export const botReceivesAttack = (data: string, ws: WebSocket) => {
 }
 
 export const botAttack = (ws: WebSocket) => {
-
     const player = mainDatabase.get(ws) as Player;
     const bot = botDatabase.find(b => b.currentGame === player?.currentGame) as Player;
 

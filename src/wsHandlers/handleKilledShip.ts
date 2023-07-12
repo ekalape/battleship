@@ -1,6 +1,6 @@
-import mainDatabase, { findByGame, findByIndex } from '../database/mainDatabase';
-import Player from './Player';
-import { IShip, IShipPosition } from './types';
+
+import Player from '../utils/Player';
+import { IShip, IShipPosition } from '../utils/types';
 
 export const handleKilledShip = (coords: IShipPosition, index: number, opp: Player) => {
 

@@ -4,15 +4,20 @@ import WebSocket from 'ws'
 import Player from '../utils/Player';
 import { nameValidation } from '../utils/nameValidation';
 import { IMessage } from '../utils/types';
+import oldFellasDB from '../database/oldFellasDB';
 
 
 export function regHandler(playerName: string, playerPassword: string, ws: WebSocket) {
     let data;
 
     try {
-        nameValidation(playerName, playerPassword)
+        const existed = nameValidation(playerName, playerPassword)
         const player = new Player(playerName, playerPassword);
+        if (existed) {
+            player.wins = existed.wins
+        }
         mainDatabase.set(ws, player)
+
         data = JSON.stringify({
             playerName,
             index: player.index,

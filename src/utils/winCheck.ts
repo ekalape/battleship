@@ -2,14 +2,6 @@
 import Player from './Player';
 
 export const winCheck = (players: Player[]) => {
-    /*     const bot = botDatabase.find(b => b.currentGame === gameId);
-        let players;
-        if (bot) {
-            const player = mainDatabase.get(findByGame(gameId)[0])
-            players = [player, bot]
-        } else {
-            players = findByGame(gameId).map(w => mainDatabase.get(w) as Player);
-        } */
     if (players[0] && players[1]) {
         if (hasAliveShip(players[0].matrix)) {
             players[1].wins += 1;

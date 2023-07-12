@@ -1,8 +1,7 @@
 
 import mainDatabase, { findByGame } from '../database/mainDatabase';
-import { handleKilledShip } from '../utils/handleKilledShip';
+import { handleKilledShip } from './handleKilledShip';
 import { AttackDataType, IShipPosition } from '../utils/types';
-import botDatabase from '../database/botDatabase'
 import Player from '../utils/Player';
 
 
@@ -17,7 +16,6 @@ export const attackHandler = (aPos: IShipPosition, gameId: number, indexPlayer: 
 export const attackCheck = (aPos: IShipPosition, opponent: Player) => {
 
     let result: "miss" | "killed" | "shot" | undefined;
-
     if (opponent) {
         const { x, y } = aPos;
 
