@@ -10,9 +10,8 @@ export const resetPlayers = (player: Player) => {
     player.matrix = [];
     player.currentGame = null;
     player.singleplay = false;
+    player.room = null;
     console.log("player reseted >> ", JSON.stringify(player))
-    const newRoom = roomCount()
-    player.room = newRoom
 
 };
 

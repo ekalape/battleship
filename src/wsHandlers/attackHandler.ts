@@ -16,18 +16,16 @@ export const attackHandler = (aPos: IShipPosition, gameId: number, indexPlayer: 
 export const attackCheck = (aPos: IShipPosition, opponent: Player) => {
 
     let result: "miss" | "killed" | "shot" | undefined;
+
     if (opponent) {
         const { x, y } = aPos;
 
         if (opponent.matrix[x][y] === "0") {
             result = "miss"
         }
-        else if (opponent.matrix[x][y] === "x") {
-            return;
-        }
-        else {
-            result = updateMatrix(opponent.matrix, x, y);
+        if (opponent.matrix[x][y] === "1") {
             opponent.matrix[x][y] = "x";
+            result = updateMatrix(opponent, x, y);
         }
 
     } return result;
@@ -50,34 +48,28 @@ export const attackResponse = (aPos: IShipPosition, indexPlayer: number, status:
     return { response, hit: status, responseArray };
 }
 
-function updateMatrix(matrix: string[][], x: number, y: number) {
+function updateMatrix(opp: Player, x: number, y: number) {
     const ship: string[] = []
+    const matrix = opp.matrix;
+    const sh = opp.ships.find(s =>
+        (s.direction && s.position.x === x && y >= s.position.y && y < (s.position.y + s.length)) ||
+        (!s.direction && s.position.y === y && x >= s.position.x && x < (s.position.x + s.length))
+    )
 
-    const directions = [
-        { dx: -1, dy: 0 }, // left
-        { dx: 1, dy: 0 },  // right
-        { dx: 0, dy: -1 }, // top
-        { dx: 0, dy: 1 },  // bottom
-    ];
-    for (const direction of directions) {
-        const newX = x + direction.dx;
-        const newY = y + direction.dy;
-
-        if (
-            newX >= 0 &&
-            newX < matrix.length &&
-            newY >= 0 &&
-            newY < matrix[newX].length
-        ) {
-            const neighbor = matrix[newX][newY];
-            if (neighbor === "0") {
-                continue;
+    if (sh) {
+        if (sh.direction) {
+            for (let i = sh.position.y; i < sh.position.y + sh.length; i++) {
+                ship.push(matrix[x][i])
             }
-            if (neighbor === "x" || neighbor === "1") {
-                ship.push(neighbor)
+        }
+        else {
+            for (let i = sh.position.x; i < sh.position.x + sh.length; i++) {
+                ship.push(matrix[i][y])
             }
         }
     }
+
+    console.log(`ship after attack: ${ship.toString()}`)
     if (ship.every(s => s === "x")) return "killed";
     else return "shot"
 

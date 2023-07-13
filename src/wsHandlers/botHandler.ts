@@ -37,7 +37,6 @@ export const botAddShips = (data: AddShipsType, ws: WebSocket) => {
     if (player && bot) {
         player.ships = data.ships;
         player.matrix = shipsToMatrix(data.ships)
-
         bot.ships = botShipsPositions();
         bot.matrix = shipsToMatrix(bot.ships);
         const botResponse = startGame(player);
@@ -49,7 +48,7 @@ export const botReceivesAttack = (data: string, ws: WebSocket) => {
     const player = mainDatabase.get(ws) as Player;
     const bot = botDatabase.find(b => b.currentGame === player?.currentGame) as Player;
     player.turn = false;
-    const { x, y, gameId, indexPlayer } = JSON.parse(data);
+    const { x, y, indexPlayer } = JSON.parse(data);
     const attackResult = attackCheck({ x, y }, bot);
     if (attackResult) {
         return attackResponse({ x, y }, indexPlayer, attackResult, bot)

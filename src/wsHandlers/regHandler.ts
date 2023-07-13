@@ -4,7 +4,6 @@ import WebSocket from 'ws'
 import Player from '../utils/Player';
 import { nameValidation } from '../utils/nameValidation';
 import { IMessage } from '../utils/types';
-import oldFellasDB from '../database/oldFellasDB';
 
 
 export function regHandler(playerName: string, playerPassword: string, ws: WebSocket) {
@@ -24,6 +23,7 @@ export function regHandler(playerName: string, playerPassword: string, ws: WebSo
             error: false,
             errorText: ""
         })
+        console.log(`Player ${playerName} is connected to the game`)
 
     } catch (err) {
 

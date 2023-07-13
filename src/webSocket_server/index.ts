@@ -17,7 +17,7 @@ import { httpServer } from '../http_server';
 import Player from '../utils/Player';
 import mainDatabase, { findByGame, findByRoom } from '../database/mainDatabase';
 import { botAddShips, botAttack, botHandler, botReceivesAttack, botTurnResponse } from '../wsHandlers/botHandler';
-import botDatabase from '../database/botDatabase';
+import botDatabase, { deleteBot } from '../database/botDatabase';
 import oldFellasDB from '../database/oldFellasDB';
 
 
@@ -25,7 +25,7 @@ import oldFellasDB from '../database/oldFellasDB';
 const wss = new WebSocketServer({ server: httpServer });
 
 wss.on('connection', function connection(ws: WebSocket) {
-    console.log(`New player is connected to the game using port ${process.env.PORT || 3000}`)
+    console.log(`New websocket is connected using port ${process.env.PORT || 3000}`)
 
     ws.on('error', console.error);
 
@@ -33,13 +33,18 @@ wss.on('connection', function connection(ws: WebSocket) {
         try {
             const player = mainDatabase.get(ws) as Player;
             if (player?.currentGame) {
-                const opponent = Array.from(mainDatabase.entries()).find(([, value]) => value.currentGame === player.currentGame && value.index !== player.index);
-                if (opponent) {
-                    const winResponse = winnerResponse(opponent[1].index);
-                    opponent[0].send(winResponse)
-                    opponent[1].wins += 1;
-                    player.room = null;
-                    resetPlayers(opponent[1]);
+                if (player.singleplay) {
+                    const bot = botDatabase.find(b => b.currentGame === player.currentGame);
+                    if (bot) deleteBot(bot?.index)
+                } else {
+                    const opponent = Array.from(mainDatabase.entries()).find(([, value]) => value.currentGame === player.currentGame && value.index !== player.index);
+                    if (opponent) {
+                        const winResponse = winnerResponse(opponent[1].index);
+                        opponent[0].send(winResponse)
+                        opponent[1].wins += 1;
+                        player.room = null;
+                        resetPlayers(opponent[1]);
+                    }
                 }
 
             }
@@ -63,7 +68,7 @@ wss.on('connection', function connection(ws: WebSocket) {
 
         try {
             const parsedData = JSON.parse(data.toString());
-
+            console.log(`Player's command: ${parsedData.type}`)
             switch (parsedData.type) {
                 case "reg":
                     const playerData: regRequestType = JSON.parse(parsedData.data);
@@ -166,6 +171,8 @@ wss.on('connection', function connection(ws: WebSocket) {
                             } else {
                                 delayedResponse(ws)
                             }
+                        } else {
+                            ws.send(botTurnResponse(player))
                         }
                     } else {
                         const playersWs = findByGame(gameId);
@@ -204,7 +211,8 @@ wss.on('connection', function connection(ws: WebSocket) {
                             playersWs.forEach(pl => {
                                 pl.send(winResponse);
                             });
-                            resetPlayers(player);
+                            players.forEach(pl => resetPlayers(pl))
+
                         }
 
                     }
@@ -244,6 +252,8 @@ wss.on('connection', function connection(ws: WebSocket) {
                             } else {
                                 delayedResponse(ws)
                             }
+                        } else {
+                            ws.send(botTurnResponse(player))
                         }
 
                     } else {
@@ -251,7 +261,10 @@ wss.on('connection', function connection(ws: WebSocket) {
                         const players = playersWs.map(w => mainDatabase.get(w)) as Player[]
                         const opponent = players.find(pl => pl.index !== indexPlayer) as Player
                         const attackResult = randomAttackHandler(indexPlayer, opponent);
-                        if (!attackResult) break;
+                        if (!attackResult) {
+                            ws.send(changeTurnHandler(players, false))
+                            break
+                        };
                         const { response, hit, responseArray } = attackResult;
                         let turnResponse: string;
                         if (["killed", "shot"].includes(hit)) { turnResponse = changeTurnHandler(players, false) }
@@ -308,7 +321,7 @@ wss.on('connection', function connection(ws: WebSocket) {
         } catch (err) {
             if (err instanceof Error) {
                 console.log(err.message)
-                // console.log(err.stack)
+                console.log(err.stack)
             }
             else console.log("Unknown Error")
         }
@@ -320,10 +333,10 @@ const delayedResponse = (ws: WebSocket) => {
     const player = mainDatabase.get(ws) as Player
     const bot = botDatabase.find(b => b.currentGame === player?.currentGame) as Player
 
+    player.turn = false;
+    ws.send(botTurnResponse(bot))
+    const botResponse = botAttack(ws);
     setTimeout(() => {
-        player.turn = false;
-        ws.send(botTurnResponse(bot))
-        const botResponse = botAttack(ws);
         if (botResponse) {
             ws.send(botResponse.response);
             if (botResponse.responseArray) {
@@ -339,7 +352,7 @@ const delayedResponse = (ws: WebSocket) => {
         }
         if (botResponse && ["killed", "shot"].includes(botResponse.hit)) delayedResponse(ws)
         else ws.send(botTurnResponse(player))
-    }, 600)
+    }, 400)
 
 }
 
