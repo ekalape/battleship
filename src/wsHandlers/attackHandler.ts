@@ -69,7 +69,6 @@ function updateMatrix(opp: Player, x: number, y: number) {
         }
     }
 
-    console.log(`ship after attack: ${ship.toString()}`)
     if (ship.every(s => s === "x")) return "killed";
     else return "shot"
 

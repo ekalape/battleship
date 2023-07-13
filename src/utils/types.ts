@@ -1,6 +1,3 @@
-import WebSocket from 'ws';
-
-
 
 export interface IMessage {
     type: string | null,
@@ -20,10 +17,6 @@ export type RegResponseType = {
     errorText: string
 }
 
-export type CreateGameType = {
-    idGame: number,
-    idPlayer: number,
-}
 
 export interface IShipPosition {
     x: number,
@@ -49,11 +42,3 @@ export type AttackDataType = {
     status: "miss" | "killed" | "shot",
 }
 
-export interface botFullResponse {
-    playersAttackResponse: string,
-    multiShot?: string[],
-    botAttack?: string,
-    botMultiShot?: string[],
-    turnResponse: string,
-
-}

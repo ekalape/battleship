@@ -133,7 +133,6 @@ wss.on('connection', function connection(ws: WebSocket) {
         } catch (err) {
             if (err instanceof Error) {
                 console.log(err.message)
-                console.log(err.stack)
             }
             else console.log("Unknown Error")
         }

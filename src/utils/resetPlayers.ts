@@ -2,7 +2,6 @@ import botDatabase, { deleteBot } from '../database/botDatabase';
 import mainDatabase from '../database/mainDatabase';
 import Player from './Player';
 import WebSocket from 'ws'
-import { roomCount } from './countID';
 
 export const resetPlayers = (player: Player) => {
     player.ships = [];
