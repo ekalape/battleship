@@ -8,8 +8,4 @@ export const addPlayerToRoom = (player: Player, roomId: number) => {
     const fullRooms = findWaiting(true).map(w => mainDatabase.get(w)?.room)
     if (fullRooms.includes(roomId)) throw new Error("The room is full");
     player.room = roomId;
-    console.log("fullRooms", fullRooms)
-    console.log("singleRooms", findWaiting(false).map(w => mainDatabase.get(w)?.room))
-
-
 };
