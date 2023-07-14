@@ -26,12 +26,14 @@ export const addShips_listener = (data: string, ws: WebSocket) => {
         if (players.every(pl => pl?.ships && pl?.ships.length > 0)) {
             const startResponse0 = startGame(players[0] as Player);
             const startResponse1 = startGame(players[1] as Player);
-            playersWs[0].send(startResponse0);
-            playersWs[1].send(startResponse1);
+            if (startResponse0 && startResponse1) {
+
+                playersWs[0].send(startResponse0);
+                playersWs[1].send(startResponse1);
+            }
         }
 
         const turnResponse = changeTurnHandler(players, true)
-        console.log(turnResponse)
         playersWs.forEach(w => w.send(turnResponse))
     }
 };

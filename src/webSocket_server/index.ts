@@ -125,7 +125,7 @@ wss.on('connection', function connection(ws: WebSocket) {
                     break;
                 }
                 default: {
-                    console.log("default case type", parsedData.type);
+                    console.log("Unforeseen case type", parsedData.type);
                 }
             }
 
@@ -133,7 +133,7 @@ wss.on('connection', function connection(ws: WebSocket) {
         } catch (err) {
             if (err instanceof Error) {
                 console.log(err.message)
-                console.log(err.stack)
+
             }
             else console.log("Unknown Error")
         }

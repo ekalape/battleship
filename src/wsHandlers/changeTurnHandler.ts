@@ -8,8 +8,11 @@ export const changeTurnHandler = (players: Player[], change: boolean) => {
     let currentTurnIndex = players.find(pl => pl && pl.turn === true)?.index
     if (!currentTurnIndex) {
         const playerToStart = randomTurn(players[0], players[1]);
-        playerToStart.turn = true;
-        currentTurnIndex = playerToStart.index;
+        if (playerToStart) {
+
+            playerToStart.turn = true;
+            currentTurnIndex = playerToStart.index;
+        }
     }
     const data = JSON.stringify({
         currentPlayer: currentTurnIndex
