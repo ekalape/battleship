@@ -7,11 +7,11 @@ import { createGame } from '../wsHandlers/createGame';
 import { updateRoomStatus } from '../wsHandlers/roomStatusHandler';
 
 
-export const addToRoom_listener = (data: string, ws: WebSocket) => {
+export const addToRoom_listener = async (data: string, ws: WebSocket) => {
     const playerData: { indexRoom: number } = JSON.parse(data);
     const player = mainDatabase.get(ws)
     if (player) {
-        addPlayerToRoom(player, playerData.indexRoom);
+        await addPlayerToRoom(player, playerData.indexRoom);
 
         const players = findByRoom(playerData.indexRoom);
         if (players.length === 2) {
@@ -20,8 +20,8 @@ export const addToRoom_listener = (data: string, ws: WebSocket) => {
             players[0].send(createGame(players[0], gameId))
             players[1].send(createGame(players[1], gameId))
         }
-        wss.clients.forEach(pl => {
-            pl.send(updateRoomStatus())
+        wss.clients.forEach(async pl => {
+            pl.send(await updateRoomStatus())
         })
     }
 };

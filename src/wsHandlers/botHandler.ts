@@ -12,17 +12,17 @@ import { startGame } from './startGame'
 import { attackCheck, attackResponse } from './attackHandler'
 import { botRandomAttack } from './randomAttackHandler'
 
-export const botHandler = (playerWs: WebSocket) => {
+export const botHandler = async (playerWs: WebSocket) => {
     const player = mainDatabase.get(playerWs) as Player
     player.singleplay = true;
     let roomId = player.room
     if (!roomId) {
         roomId = roomCount();
-        addPlayerToRoom(player, roomId)
+        await addPlayerToRoom(player, roomId)
     }
     const bot = new Player("Bot", "noPassword");
     botDatabase.push(bot)
-    addPlayerToRoom(bot, roomId);
+    await addPlayerToRoom(bot, roomId);
     const gameId = gameID()
     const playerGameResponse = createGame(playerWs, gameId)
     bot.currentGame = gameId;

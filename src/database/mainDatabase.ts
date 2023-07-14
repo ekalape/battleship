@@ -5,7 +5,7 @@ const mainDatabase: Map<WebSocket, Player> = new Map()
 
 export default mainDatabase;
 
-export const findWaiting = (full: boolean) => {
+export const findWaiting = async (full: boolean) => {
     const allRooms = Array.from(mainDatabase.entries())
         .filter(([, value]) => value.singleplay === false)
         .map(([, value]) => value.room);

@@ -49,9 +49,9 @@ wss.on('connection', function connection(ws: WebSocket) {
             console.log(`Player ${player.name} is leaving game`);
             oldFellasDB.push({ name: player.name, password: player.password, wins: player.wins })
             mainDatabase.delete(ws)
-            wss.clients.forEach(pl => {
+            wss.clients.forEach(async pl => {
                 pl.send(updateWinners())
-                pl.send(updateRoomStatus())
+                pl.send(await updateRoomStatus())
             })
 
         } catch (err) {
@@ -62,7 +62,7 @@ wss.on('connection', function connection(ws: WebSocket) {
 
     });
 
-    ws.on('message', function message(data) {
+    ws.on('message', async function message(data) {
 
         try {
             const parsedData = JSON.parse(data.toString());
@@ -72,8 +72,8 @@ wss.on('connection', function connection(ws: WebSocket) {
                     const playerData: regRequestType = JSON.parse(parsedData.data);
                     const response = regHandler(playerData.name, playerData.password, ws)
                     ws.send(response)
-                    wss.clients.forEach(pl => {
-                        pl.send(updateRoomStatus());
+                    wss.clients.forEach(async pl => {
+                        pl.send(await updateRoomStatus());
                         pl.send(updateWinners())
                     })
 
@@ -83,15 +83,15 @@ wss.on('connection', function connection(ws: WebSocket) {
                     const roomId = roomCount()
                     const player = mainDatabase.get(ws);
                     if (player) {
-                        addPlayerToRoom(player, roomId)
-                        wss.clients.forEach(pl => {
-                            pl.send(updateRoomStatus())
+                        await addPlayerToRoom(player, roomId)
+                        wss.clients.forEach(async pl => {
+                            pl.send(await updateRoomStatus())
                         })
                     }
                     break;
 
                 case "add_user_to_room": {
-                    addToRoom_listener(parsedData.data, ws)
+                    await addToRoom_listener(parsedData.data, ws)
                     break;
                 }
 
@@ -102,26 +102,26 @@ wss.on('connection', function connection(ws: WebSocket) {
 
                 case "attack": {
                     attack_listener(parsedData.data, ws)
-                    Array.from(mainDatabase.keys()).forEach(pl => {
+                    Array.from(mainDatabase.keys()).forEach(async pl => {
                         pl.send(updateWinners());
-                        pl.send(updateRoomStatus())
+                        pl.send(await updateRoomStatus())
                     })
                     break;
                 }
 
                 case "randomAttack": {
                     randomAttack_listener(parsedData.data, ws)
-                    Array.from(mainDatabase.keys()).forEach(pl => {
+                    Array.from(mainDatabase.keys()).forEach(async pl => {
                         pl.send(updateWinners());
-                        pl.send(updateRoomStatus())
+                        pl.send(await updateRoomStatus())
                     })
                     break;
                 }
 
                 case "single_play": {
-                    const singleplayResponse = botHandler(ws);
+                    const singleplayResponse = await botHandler(ws);
                     ws.send(singleplayResponse);
-                    wss.clients.forEach(cl => cl.send(updateRoomStatus()))
+                    wss.clients.forEach(async cl => cl.send(await updateRoomStatus()))
                     break;
                 }
                 default: {
@@ -133,6 +133,7 @@ wss.on('connection', function connection(ws: WebSocket) {
         } catch (err) {
             if (err instanceof Error) {
                 console.log(err.message)
+                console.log(err.stack)
             }
             else console.log("Unknown Error")
         }

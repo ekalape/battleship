@@ -10,8 +10,6 @@ export const resetPlayers = (player: Player) => {
     player.currentGame = null;
     player.singleplay = false;
     player.room = null;
-    console.log("player reseted >> ", JSON.stringify(player))
-
 };
 
 export const resetBotAndPlayer = (ws: WebSocket) => {

@@ -2,9 +2,9 @@
 import mainDatabase, { findWaiting } from '../database/mainDatabase';
 
 
-export const updateRoomStatus = () => {
+export const updateRoomStatus = async () => {
 
-    const availableRooms = findWaiting(false).map(ws => ({ roomId: mainDatabase.get(ws)?.room, roomUsers: [{ name: mainDatabase.get(ws)?.name, index: mainDatabase.get(ws)?.index }] }))
+    const availableRooms = (await findWaiting(false)).map(ws => ({ roomId: mainDatabase.get(ws)?.room, roomUsers: [{ name: mainDatabase.get(ws)?.name, index: mainDatabase.get(ws)?.index }] }))
 
     const data = JSON.stringify(availableRooms)
     const response = JSON.stringify({
