@@ -1,4 +1,5 @@
 import Player from '../utils/Player';
+import { responseCreator } from '../utils/responseCreator';
 
 export const changeTurnHandler = (players: Player[], change: boolean) => {
 
@@ -18,12 +19,7 @@ export const changeTurnHandler = (players: Player[], change: boolean) => {
         currentPlayer: currentTurnIndex
     })
 
-    const response = JSON.stringify({
-        type: "turn",
-        data,
-        id: 0,
-    })
-    return response;
+    return responseCreator("turn", data);
 
 }
 

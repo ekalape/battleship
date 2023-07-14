@@ -3,7 +3,7 @@ import mainDatabase from '../database/mainDatabase';
 import WebSocket from 'ws'
 import Player from '../utils/Player';
 import { nameValidation } from '../utils/nameValidation';
-import { IMessage } from '../utils/types';
+import { responseCreator } from '../utils/responseCreator';
 
 
 export function regHandler(playerName: string, playerPassword: string, ws: WebSocket) {
@@ -32,13 +32,6 @@ export function regHandler(playerName: string, playerPassword: string, ws: WebSo
         } else data = JSON.stringify({ name: "Unknown", index: -1, error: true, errorText: "Unknown error" })
     }
 
-
-    const response: IMessage = {
-        type: "reg",
-        data,
-        id: 0
-    }
-
-    return JSON.stringify(response)
+    return responseCreator("reg", data)
 }
 

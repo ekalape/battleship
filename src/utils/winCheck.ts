@@ -1,5 +1,6 @@
 
 import Player from './Player';
+import { responseCreator } from './responseCreator';
 
 export const winCheck = (players: Player[]) => {
     if (players[0] && players[1]) {
@@ -21,10 +22,5 @@ const hasAliveShip = (matrix: string[][]) => {
 
 export const winnerResponse = (winPlayer: number) => {
     const data = JSON.stringify({ winPlayer });
-    const response = JSON.stringify({
-        type: "finish",
-        data,
-        id: 0,
-    })
-    return response;
+    return responseCreator("finish", data);
 }

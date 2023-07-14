@@ -11,6 +11,7 @@ import { botShipsPositions } from '../utils/botShipsPositions'
 import { startGame } from './startGame'
 import { attackCheck, attackResponse } from './attackHandler'
 import { botRandomAttack } from './randomAttackHandler'
+import { responseCreator } from '../utils/responseCreator'
 
 export const botHandler = async (playerWs: WebSocket) => {
     const player = mainDatabase.get(playerWs) as Player
@@ -70,10 +71,5 @@ export const botTurnResponse = (player: Player) => {
         currentPlayer: player.index
     })
 
-    const response = JSON.stringify({
-        type: "turn",
-        data,
-        id: 0,
-    })
-    return response;
+    return responseCreator("turn", data);
 }

@@ -3,6 +3,7 @@ import mainDatabase, { findByGame } from '../database/mainDatabase';
 import { handleKilledShip } from './handleKilledShip';
 import { AttackDataType, IShipPosition } from '../utils/types';
 import Player from '../utils/Player';
+import { responseCreator } from '../utils/responseCreator';
 
 
 export const attackHandler = (aPos: IShipPosition, gameId: number, indexPlayer: number) => {
@@ -35,12 +36,7 @@ export const attackResponse = (aPos: IShipPosition, indexPlayer: number, status:
 
     const attackResponse: AttackDataType = { position: aPos, currentPlayer: indexPlayer, status }
     const data = JSON.stringify(attackResponse)
-    const response = JSON.stringify({
-        type: "attack",
-        data,
-        id: 0
-
-    })
+    const response = responseCreator("attack", data)
     let responseArray;
     if (status === "killed") {
         responseArray = handleKilledShip(aPos, indexPlayer, opp)

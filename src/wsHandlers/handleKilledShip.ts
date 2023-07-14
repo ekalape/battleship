@@ -1,5 +1,6 @@
 
 import Player from '../utils/Player';
+import { responseCreator } from '../utils/responseCreator';
 import { IShip, IShipPosition } from '../utils/types';
 
 export const handleKilledShip = (coords: IShipPosition, index: number, opp: Player) => {
@@ -36,21 +37,13 @@ export const handleKilledShip = (coords: IShipPosition, index: number, opp: Play
         for (let el of shipCoords) {
             const attackResponse = { position: { x: el.x, y: el.y }, currentPlayer: index, status: "killed" }
             const data = JSON.stringify(attackResponse)
-            const response = JSON.stringify({
-                type: "attack",
-                data,
-                id: 0
-            })
+            const response = responseCreator("attack", data)
             responseArray.push(response)
         }
         for (let el of aroundCoords) {
             const attackResponse = { position: { x: el.x, y: el.y }, currentPlayer: index, status: "miss" }
             const data = JSON.stringify(attackResponse)
-            const response = JSON.stringify({
-                type: "attack",
-                data,
-                id: 0
-            })
+            const response = responseCreator("attack", data)
             responseArray.push(response)
         }
 

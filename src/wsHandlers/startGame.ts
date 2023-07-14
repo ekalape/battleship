@@ -1,5 +1,6 @@
 
 import Player from '../utils/Player';
+import { responseCreator } from '../utils/responseCreator';
 
 
 export const startGame = (player: Player) => {
@@ -9,13 +10,7 @@ export const startGame = (player: Player) => {
             ships: player.ships,
             currentPlayerIndex: player.index
         })
-        const response = JSON.stringify({
-            type: "start_game",
-            data: gameData,
-            id: 0
-        })
 
-
-        return response;
+        return responseCreator("start_game", gameData);
     }
 }
