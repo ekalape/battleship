@@ -1,0 +1,75 @@
+import WebSocket from 'ws'
+import mainDatabase from '../database/mainDatabase'
+import { gameID, roomCount } from '../utils/countID'
+import { addPlayerToRoom } from './addPlayerToRoom'
+import Player from '../utils/Player'
+import { createGame } from './createGame'
+import { AddShipsType } from '../utils/types'
+import { shipsToMatrix } from '../utils/shipsToMatrix'
+import botDatabase from '../database/botDatabase'
+import { botShipsPositions } from '../utils/botShipsPositions'
+import { startGame } from './startGame'
+import { attackCheck, attackResponse } from './attackHandler'
+import { botRandomAttack } from './randomAttackHandler'
+import { responseCreator } from '../utils/responseCreator'
+
+export const botHandler = async (playerWs: WebSocket) => {
+    const player = mainDatabase.get(playerWs) as Player
+    player.singleplay = true;
+    let roomId = player.room
+    if (!roomId) {
+        roomId = roomCount();
+        await addPlayerToRoom(player, roomId)
+    }
+    const bot = new Player("Bot", "noPassword");
+    botDatabase.push(bot)
+    await addPlayerToRoom(bot, roomId);
+    const gameId = gameID()
+    const playerGameResponse = createGame(playerWs, gameId)
+    bot.currentGame = gameId;
+    return playerGameResponse;
+
+
+}
+
+export const botAddShips = (data: AddShipsType, ws: WebSocket) => {
+    const player = mainDatabase.get(ws)
+    const bot = botDatabase.find(b => b.currentGame === player?.currentGame);
+    if (player && bot) {
+        player.ships = data.ships;
+        player.matrix = shipsToMatrix(data.ships)
+        bot.ships = botShipsPositions();
+        bot.matrix = shipsToMatrix(bot.ships);
+        const botResponse = startGame(player);
+        return botResponse;
+    }
+}
+
+export const botReceivesAttack = (data: string, ws: WebSocket) => {
+    const player = mainDatabase.get(ws) as Player;
+    const bot = botDatabase.find(b => b.currentGame === player?.currentGame) as Player;
+    player.turn = false;
+    const { x, y, indexPlayer } = JSON.parse(data);
+    const attackResult = attackCheck({ x, y }, bot);
+    if (attackResult) {
+        return attackResponse({ x, y }, indexPlayer, attackResult, bot)
+    }
+}
+
+export const botAttack = (ws: WebSocket) => {
+    const player = mainDatabase.get(ws) as Player;
+    const bot = botDatabase.find(b => b.currentGame === player?.currentGame) as Player;
+
+    return botRandomAttack(player, bot);
+
+
+}
+
+export const botTurnResponse = (player: Player) => {
+    player.turn = true;
+    const data = JSON.stringify({
+        currentPlayer: player.index
+    })
+
+    return responseCreator("turn", data);
+}
